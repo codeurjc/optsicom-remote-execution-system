@@ -315,7 +315,7 @@ public class LocalVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 	}
 	
 	
-	private void launch(IType type, String mode) {
+	protected void launch(IType type, String mode) {
 		ILaunchConfiguration config;
 		config = createConfiguration(type);
 		DebugUITools.launch(config, mode);

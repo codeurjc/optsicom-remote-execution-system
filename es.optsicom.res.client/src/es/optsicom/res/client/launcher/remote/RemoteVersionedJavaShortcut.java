@@ -180,7 +180,7 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 		}
 	}
 	
-	private void launch(final IType type, final String mode) {
+	protected void launch(final IType type, final String mode) {
 
 		ProjectDependenciesResolver dependenciesResolver = new ProjectDependenciesResolver(type.getJavaProject());
 		dependenciesResolver.resolveDependencies();
