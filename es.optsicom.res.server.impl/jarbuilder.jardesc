@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<jardesc>
+    <jar path="es.optsicom.res.server.impl/es.optsicom.res.server-0.9.17.jar"/>
+    <options buildIfNeeded="true" compress="true" descriptionLocation="/es.optsicom.res.server.impl/jarbuilder.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="false" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+    <selectedProjects/>
+    <manifest generateManifest="false" mainClassHandleIdentifier="=es.optsicom.res.server.impl/src&lt;es.optsicom.res.server.impl{OptsicomServer.java[OptsicomServer" manifestLocation="/es.optsicom.res.server.impl/META-INF" manifestVersion="1.0" reuseManifest="true" saveManifest="true" usesManifest="true">
+        <sealing sealJar="false">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
+        <javaElement handleIdentifier="=es.optsicom.res.server/src"/>
+        <file path="/es.optsicom.res.server.impl/epl-v10.html"/>
+        <file path="/es.optsicom.res.server.impl/LICENSE"/>
+        <file path="/es.optsicom.res.server.impl/README"/>
+        <javaElement handleIdentifier="=es.optsicom.res.server.impl/src"/>
+        <file path="/es.optsicom.res.server.impl/java.policy"/>
+    </selectedElements>
+</jardesc>
