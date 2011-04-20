@@ -1,8 +1,0 @@
-To set the password run (to change the password again, issue the command with a new password):
-
-  java -jar es.optsicom.res.server-*.jar <password>
-
-To run the server issue:
-
-  java -jar es.optsicom.res.server-*.jar <IP> <RMI Port> <Server port> <Executor port> <JRE full path>
-  
