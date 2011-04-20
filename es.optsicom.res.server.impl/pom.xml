@@ -2,7 +2,7 @@
 	<parent>
 		<artifactId>res-parent</artifactId>
 		<groupId>es.optsicom.res</groupId>
-		<version>1.0.3-SNAPSHOT</version>
+		<version>1.0.3.201104202148</version>
 		<relativePath>..\es.optsicom.res.res-parent</relativePath>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
@@ -12,7 +12,7 @@
   	<dependency>
   		<groupId>es.optsicom.res</groupId>
   		<artifactId>server</artifactId>
-  		<version>1.0.3-SNAPSHOT</version>
+  		<version>1.0.3.201104202148</version>
   		<scope>compile</scope>
   	</dependency>
   </dependencies>
