@@ -2,7 +2,7 @@
 	<parent>
 		<artifactId>res-parent</artifactId>
 		<groupId>es.optsicom.res</groupId>
-		<version>1.0.3.201104202148</version>
+		<version>1.0.4-SNAPSHOT</version>
 		<relativePath>../es.optsicom.res.res-parent</relativePath>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
