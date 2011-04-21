@@ -61,15 +61,13 @@
   <pluginRepositories>
     <pluginRepository>
       <id>sonatype.snapshots</id>
-      <!-- <url>https://repository.sonatype.org/content/repositories/snapshots/</url> -->
-      <!-- <url>https://repository.sonatype.org/content/groups/public</url> -->
       <url>http://build.sidelab.es:8080/nexus/content/repositories/sonatype-snapshots/</url>
     </pluginRepository>
   </pluginRepositories>
   
   <scm>
-  	<connection>scm:svn:https://code.sidelab.es/svn/optsicomres/bar/tags/v1.0.8/es.optsicom.res.res-parent</connection>
-  	<url>https://code.sidelab.es/svn/optsicomres/bar/tags/v1.0.8/bar</url>
+  	<connection>scm:svn:https://code.sidelab.es/svn/optsicomres/res/trunk</connection>
+  	<url>https://code.sidelab.es/svn/optsicomres/res</url>
   </scm>
   
   <distributionManagement>
