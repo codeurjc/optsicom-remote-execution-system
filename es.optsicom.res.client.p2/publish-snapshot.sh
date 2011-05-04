@@ -24,7 +24,7 @@ echo "remotep2=$remotep2"
 echo "mavenp2=$mavenp2"
 echo "tmpp2=$tmpp2"
 echo "username=$username"
-echo "password=$password"
+#echo "password=$password"
 echo "host=$host"
 echo "remotedir=$remotedir"
 
