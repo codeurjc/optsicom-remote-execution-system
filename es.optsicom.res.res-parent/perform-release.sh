@@ -43,7 +43,7 @@ cd ..
 svn ci -m "prepare release optsicom-res-$tagVersion" --username $3 --password $4
 
 # Tag release
-svn copy https://dev.sidelab.es/svn/optsicomres/res/trunk/ https://dev.sidelab.es/svn/optsicomres/res/tags/optsicom-res-$tagVersion -m "copy for tag optsicom-res-$tagVersion" --username $3 --password $4
+svn copy https://code.sidelab.es/svn/optsicomres/res/trunk/ https://code.sidelab.es/svn/optsicomres/res/tags/optsicom-res-$tagVersion -m "copy for tag optsicom-res-$tagVersion" --username $3 --password $4
 
 # Prepare next development version
 cd es.optsicom.res.res-parent
