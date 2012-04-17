@@ -197,19 +197,8 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 			return;
 		}
 		
-		final ZipFileCreation zipjob = new ZipFileCreation(type.getJavaProject());
-		zipjob.setUserSelectedResources(selectedResources);
-		IStatus status = zipjob.create(new NullProgressMonitor());
-		
-		if(!status.isOK()) {
-			RESClientPlugin.log("Problems exporting zip file: " + status.getMessage());
-			MessageDialog.openError(getShell(), "Error creating zip file", status.getMessage());
-			return;
-		}
-		
+		//mgarcia: Optiscom Res evolution
 		final RemoteExecutionJob job = new RemoteExecutionJob();
-		job.setZipName(zipjob.getZipName());
-		job.setResolved(zipjob.getResolver());
 		job.setHost(host);
 		job.setPortRMI(portRmi);
 		job.setPortDebug(portDebug);
@@ -218,6 +207,8 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 		job.setProgramArgs(prgargs);
 		job.setMainClass(type.getFullyQualifiedName());
 		job.setMode(mode);
+		job.setUserSelectedResources(selectedResources);
+		job.setProject(type.getJavaProject());
 		
 		job.addJobChangeListener(new JobChangeAdapter(){
 			@Override

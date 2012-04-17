@@ -1,8 +1,23 @@
-To set the password run (to change the password again, issue the command with a new password):
+To run the server config the properties file (configserver.properties):
 
-  java -jar es.optsicom.res.server-*.jar <password>
+# Password server
+password=admin
+# Host
+host=localhost
+# Port RMI
+portRmi=8888
+# Port Server
+portServer=8889
+# Port Executor
+portExecutor=8890
+# jre bin folder
+jreBinFolder=/usr/bin/jvm/java-6-openjdk
 
-To run the server issue:
+To run the server issue the command (to change the values again, issue the command with new values):
 
-  java -jar es.optsicom.res.server-*.jar <IP> <RMI Port> <Server port> <Executor port> <JRE full path>
+java -jar es.optsicom.res.server-*.jar
+  
+For more information:
+
+http://code.sidelab.es/projects/optsicomres/wiki
   

@@ -64,15 +64,14 @@ public class ZipFileCreation {
 	 * @param monitor A monitor that is used to report progress
 	 * @return The resulting status of the operation
 	 */
-	public IStatus create(IProgressMonitor monitor) {
-		SubMonitor subMonitor = SubMonitor.convert(monitor);
-		subMonitor.beginTask("Creating zip file", 2);
+	public IStatus create(SubMonitor monitor) {
+		monitor.beginTask("Creating zip file", 2);
 
 		//Variables para el envio de los ficheros .jar y .zip
 		resolver.resolveDependencies();
 		List<File> dependencies = resolver.getClasspathFiles();
 		
-		subMonitor.worked(1);
+		monitor.worked(1);
 		
 		// Añadimos los ficheros que seleccionó el usuario en el wizard
 		if(userSelectedResources != null) { 
@@ -85,15 +84,18 @@ public class ZipFileCreation {
 		IWorkspace ws = ResourcesPlugin.getWorkspace();
 		String projectName = resolver.getJavaProject().getElementName();
 		try {
-			zipName = createZIPFile(ws.getRoot().getLocation().toOSString(), projectName, dependencies, subMonitor.newChild(1));
+			zipName = createZIPFile(ws.getRoot().getLocation().toOSString(), projectName, dependencies, monitor.newChild(1));
 		} catch (ZipCreatorException e) {
 			RESClientPlugin.log(e);
 			return new Status(IStatus.ERROR, RESClientPlugin.PLUGIN_ID, "Couldn't create zip file");
 		}
 		
-		subMonitor.worked(1);
+		//mgarcia: Optiscom Res evolution
+		if (monitor.isCanceled()) {
+			return new Status(IStatus.CANCEL, RESClientPlugin.PLUGIN_ID, "Operation has been cancelled");
+		}
 		
-		subMonitor.done();
+		monitor.worked(1);
 		
 		if(zipName == null) {
 			return new Status(IStatus.ERROR, RESClientPlugin.PLUGIN_ID, "Couldn't create zip file");
@@ -118,10 +120,14 @@ public class ZipFileCreation {
 		zc.setBaseDir(workspaceLocation);
 		zc.zip(filesZip, nombreZip);
 		
+		//mgarcia: Optiscom Res evolution
+		if (monitor.isCanceled()) {
+			RESClientPlugin.log("Canceled: delete zip file");
+			zipFile.delete();
+		}
+		
 		monitor.worked(1);
 
-		monitor.done();
-		
 		return nombreZip;
 	}
 

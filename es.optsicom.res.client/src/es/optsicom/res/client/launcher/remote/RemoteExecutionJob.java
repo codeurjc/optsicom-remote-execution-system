@@ -17,11 +17,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
 import java.rmi.Naming;
 import java.util.List;
 
-import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
@@ -30,11 +28,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.jdt.internal.debug.ui.JDIDebugUIPlugin;
-import org.eclipse.jdt.internal.debug.ui.launcher.LauncherMessages;
-import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.dialogs.ProgressMonitorDialog;
-import org.eclipse.jface.operation.IRunnableWithProgress;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.ui.console.ConsolePlugin;
 import org.eclipse.ui.console.IConsole;
 import org.eclipse.ui.console.IConsoleManager;
@@ -43,9 +37,8 @@ import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.preferences.ScopedPreferenceStore;
 
 import es.optsicom.res.client.RESClientPlugin;
+import es.optsicom.res.client.ZipFileCreation;
 import es.optsicom.res.client.util.ProjectDependenciesResolver;
-import es.optsicom.res.client.util.ZipCreator;
-import es.optsicom.res.client.util.ZipCreatorException;
 import es.optsicom.res.server.OptsicomRemoteExecutor;
 import es.optsicom.res.server.OptsicomRemoteServer;
 import es.optsicom.res.server.PaqueteDatos;
@@ -62,6 +55,10 @@ public class RemoteExecutionJob extends Job {
 	private String zipName;
 	private String mode;
 	private ProjectDependenciesResolver resolver;
+	private List userSelectedResources;
+	private IJavaProject project;
+	//mgarcia: Optsicom Res evolution
+	private static final String OPTSICOMRESOUTPUT = "OptsicomRESOutput";
 	
 	public RemoteExecutionJob() {
 		super("Remote Execution");
@@ -74,18 +71,38 @@ public class RemoteExecutionJob extends Job {
 			SubMonitor subMonitor = SubMonitor.convert(monitor);
 			subMonitor.beginTask("Launching", 5);
 			
+			//mgarcia: Optiscom Res evolution
+			subMonitor.subTask("Creating zip file");
+			ZipFileCreation zipjob = new ZipFileCreation(project);
+			zipjob.setUserSelectedResources(userSelectedResources);
+			IStatus status = zipjob.create(subMonitor.newChild(1));
+			
+			if (subMonitor.isCanceled()) {
+				return new Status(IStatus.CANCEL, RESClientPlugin.PLUGIN_ID, "Operation has been cancelled");
+			}
+						
+			if(!status.isOK()) {
+				RESClientPlugin.log("Problems exporting zip file: " + status.getMessage());
+				return new Status(IStatus.ERROR, RESClientPlugin.PLUGIN_ID, "Error creating zip file");
+			}
+			
+			this.setZipName(zipjob.getZipName());
+			this.setResolved(zipjob.getResolver());
+			
 			subMonitor.subTask("Connecting to server");
 			RESClientPlugin.log("Entra");
 			OptsicomRemoteServer veex = (OptsicomRemoteServer) Naming.lookup("//"+host+":"+portRMI+"/optsicom");
 			OptsicomRemoteExecutor executor = veex.getExecutor();
 			subMonitor.worked(1);
+			//mgarcia: Optiscom Res evolution
+			if (subMonitor.isCanceled()) {
+				return new Status(IStatus.CANCEL, RESClientPlugin.PLUGIN_ID, "Operation has been cancelled");
+			}
 			
 			while ( !executor.authenticate(password)) {
 				RESClientPlugin.log("Authentication failed: wrong password");
 				return new Status(IStatus.ERROR, RESClientPlugin.PLUGIN_ID, "Authentication failed: wrong password");
 			}
-			
-			IWorkspace ws = ResourcesPlugin.getWorkspace();
 			
 			if(zipName == null) {
 				return new Status(IStatus.ERROR, RESClientPlugin.PLUGIN_ID, "Couldn't create zip file");
@@ -96,17 +113,29 @@ public class RemoteExecutionJob extends Job {
 			String projectName = resolver.getJavaProject().getElementName();
 			sendZip(zipName, executor, subMonitor.newChild(1));
 			subMonitor.worked(1);
+			//mgarcia: Optiscom Res evolution
+			if (subMonitor.isCanceled()) {
+				return new Status(IStatus.CANCEL, RESClientPlugin.PLUGIN_ID, "Operation has been cancelled");
+			}
 			
 			subMonitor.subTask("Setting classpath and working dir");
 			executor.setJarDirs(resolver.getClasspath());
 			executor.setWorkingDir(projectName);
 			subMonitor.worked(1);
+			//mgarcia: Optiscom Res evolution
+			if (subMonitor.isCanceled()) {
+				return new Status(IStatus.CANCEL, RESClientPlugin.PLUGIN_ID, "Operation has been cancelled");
+			}
 			
 			subMonitor.subTask("Launching the program");
 			String zipLastSegment = zipName.substring(zipName.lastIndexOf(File.separator) + 1);
 			String idjob = executor.launch(mode,password,host,portRMI,/*portServer,*/portDebug,vmArgs,programArgs,mainClass,zipLastSegment);
 			executor.setState(idjob, "Running");
 			subMonitor.worked(1);
+			//mgarcia: Optiscom Res evolution
+			if (subMonitor.isCanceled()) {
+				return new Status(IStatus.CANCEL, RESClientPlugin.PLUGIN_ID, "Operation has been cancelled");
+			}
 			
 			ScopedPreferenceStore sps =  (ScopedPreferenceStore) RESClientPlugin.getDefault().getPreferenceStore();
 			sps.putValue(idjob,host+":"+portRMI);
@@ -114,6 +143,10 @@ public class RemoteExecutionJob extends Job {
 			subMonitor.subTask("Opening remote console");
 			openConsole(executor,idjob);
 			subMonitor.worked(1);
+			//mgarcia: Optiscom Res evolution
+			if (subMonitor.isCanceled()) {
+				return new Status(IStatus.CANCEL, RESClientPlugin.PLUGIN_ID, "Operation has been cancelled");
+			}
 			
 			subMonitor.done();
 
@@ -148,10 +181,15 @@ public class RemoteExecutionJob extends Job {
 			bytesRead = 0;
 		}
 		
-		while ( (longitud=in.read(buf)) > 0) {
+		////mgarcia: Optiscom Res evolution
+		boolean isCanceled = false;
+		while ( ((longitud=in.read(buf)) > 0) && !isCanceled) {
 			PaqueteDatos pd = new PaqueteDatos(buf,longitud);
 			executor.setZip(f,pd,false);
 			bytesRead += longitud;
+			if (monitor.isCanceled()) {
+				isCanceled = true;
+			}
 			if(bytesRead > fileChunksToMonitor) {
 				monitor.worked(1);
 				bytesRead = 0;
@@ -177,12 +215,30 @@ public class RemoteExecutionJob extends Job {
 		
 		cos = miconsola.newOutputStream();
 		
+		
+		
 		new Thread(){
 			public void run(){
 				try {
 					String cadena = "";
 					IPath statePath = RESClientPlugin.getDefault().getStateLocation();
 					File cFile = new File(statePath.toFile(), "Clientconsole_"+idjob+".txt");
+					//mgarcia: Optiscom Res evolution
+					IWorkspace ws = ResourcesPlugin.getWorkspace();
+					String workSpaceRoot = ws.getRoot().getLocation().toOSString();
+					String projectName = resolver.getJavaProject().getElementName();
+					StringBuffer executionResultsPath = new StringBuffer();
+					executionResultsPath.append(workSpaceRoot);
+					executionResultsPath.append(File.separator);
+					executionResultsPath.append(projectName);
+					executionResultsPath.append(File.separator);
+					executionResultsPath.append(OPTSICOMRESOUTPUT);
+					
+					File wFile = new File(executionResultsPath.toString()); 
+					if(!wFile.exists()){
+						wFile.mkdir();
+					}
+					wFile = new File(executionResultsPath.toString(), "Clientconsole_"+idjob+".txt");
 					
 					cos.write(cadena);
 					cos.flush();
@@ -190,6 +246,9 @@ public class RemoteExecutionJob extends Job {
 					for (;;){		
 						FileWriter fw = new FileWriter(cFile,true);
 						PrintWriter pw = new PrintWriter(fw);
+						//mgarcia: Optiscom Res evolution
+						FileWriter cfw = new FileWriter(wFile,true);
+						PrintWriter cpw = new PrintWriter(cfw);
 
 						if (executor.hasProcessFinished(idjob)){
 							cadena = executor.readConsole(idjob);
@@ -203,10 +262,15 @@ public class RemoteExecutionJob extends Job {
 						
 						if (cadena != null){
 							pw.write(cadena+"\r\n");
+							//mgarcia: Optiscom Res evolution
+							cpw.write(cadena+"\r\n");
 							cos.write(cadena+"\n");
 							cos.flush();
 							pw.flush();
 							pw.close();
+							//mgarcia: Optiscom Res evolution
+							cpw.flush();
+							cpw.close();
 						}
 						else{
 							if (executor.hasProcessFinished(idjob)){
@@ -276,6 +340,23 @@ public class RemoteExecutionJob extends Job {
 
 	public void setResolved(ProjectDependenciesResolver resolver) {
 		this.resolver = resolver;		
+	}
+
+	//mgarcia: Optiscom Res evolution
+	public void setUserSelectedResources(List userSelectedResources) {
+		this.userSelectedResources = userSelectedResources;
+	}
+	
+	public List getUserSelectedResources() {
+		return userSelectedResources;
+	}
+
+	public void setProject(IJavaProject project) {
+		this.project = project;
+	}
+
+	public IJavaProject getProject() {
+		return project;
 	}
 
 	

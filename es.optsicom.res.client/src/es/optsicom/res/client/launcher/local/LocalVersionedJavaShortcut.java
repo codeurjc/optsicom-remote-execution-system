@@ -28,6 +28,7 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.debug.core.DebugPlugin;
@@ -234,7 +235,7 @@ public class LocalVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 			//Configuracion de los ficheros fuentes que va a admitir
 			ZipFileCreation zipjob = new ZipFileCreation(type.getJavaProject());
 			zipjob.setUserSelectedResources(Collections.emptyList());
-			zipjob.create(new NullProgressMonitor());
+			zipjob.create(SubMonitor.convert(new NullProgressMonitor()));
 
 			String nombre = zipjob.getZipName();
 			addSourceLocations(wc, new Path(nombre));

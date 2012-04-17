@@ -20,6 +20,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
@@ -27,15 +28,14 @@ import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.rmi.server.RemoteRef;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
@@ -194,7 +194,8 @@ public class OptsicomServer extends UnicastRemoteObject implements OptsicomRemot
 		//Asignacion del id de trabajo cuando comienza la ejecucion
 		long time=System.currentTimeMillis();
 		Date fecha=new Date(time);
-		SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd_hh-mm-ss");
+		//mgarcia: Optiscom Res evolution 
+		SimpleDateFormat formato = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
 		String cadenaFecha = formato.format(fecha);
 		
 		return cadenaFecha;
@@ -307,61 +308,95 @@ public class OptsicomServer extends UnicastRemoteObject implements OptsicomRemot
 	 */
 	public static void main(String[] args) {
 		try {
+			//mgarcia: Optiscom Res evolution
+			String pass="adminserver";
 			int portServer=0;
 			int portRmi=2002;
 			int portExecutor = 0;
 			String host="127.0.0.1";
 			String jreBinFolder = "";
 			
-			System.out.println("Args: "+Arrays.toString(args));
+			//mgarcia: Optiscom Res evolution
+			Properties configFile = new Properties();
 			
-			if (args.length > 0){
-				if (args.length == 5){
-					host = args[0];
-					portRmi = Integer.parseInt(args[1]);
-					portServer = Integer.parseInt(args[2]);
-					portExecutor = Integer.parseInt(args[3]);
-					jreBinFolder = args[4];
-				} else if(args.length == 1) {
-					// We change the password
-					String pass = args[0];
-					String cypheredPass = cypher(pass);
-					File passwdFile = new File(".auth");
-					if(passwdFile.exists()) {
-						// Make a backup
-						passwdFile.renameTo(new File(".auth_bak"));
-						passwdFile.delete();
-					}
-					if(passwdFile.createNewFile()) {
-						BufferedWriter bw = new BufferedWriter(new FileWriter(passwdFile));
-						bw.append(cypheredPass);
-						bw.close();
-						passwdFile.setReadable(false, false);
-						passwdFile.setReadable(true, true);
-						passwdFile.setWritable(false, false);
-						System.out.println("Done.");
-						System.exit(0);
-					} else {
-						System.out.println("Couldn't create file: check permissions");
-						System.exit(-1);
-					}
-				} else {
-					System.out.println("Wrong number of arguments");
-					System.out.println("Usage: java -jar server.jar");
-					System.out.println("Usage: java -jar server.jar <hostname> <portRmi> <portServer> <portExecutor> <jre_bin_folder>");
-					System.exit(-1);
-				}
+			String configServer = System.getProperty("user.dir");
+	    	configServer = configServer.concat(File.separator+"configserver.properties");
+			
+			InputStream is = new FileInputStream(configServer);
+
+			configFile.load(is);
+
+			if(!configFile.getProperty("password").isEmpty()){
+				pass = configFile.getProperty("password");
+			} else {
+				System.out.println("Check configserver.properties");
+				System.out.println("password value is empty");
+				System.exit(-1);
+			}
+			if(!configFile.getProperty("host").isEmpty()){
+				host = configFile.getProperty("host");
+			} else {
+				System.out.println("Check configserver.properties");
+				System.out.println("host value is empty");
+				System.exit(-1);
+			}
+			if(!configFile.getProperty("portRmi").isEmpty()){
+				portRmi = Integer.parseInt(configFile.getProperty("portRmi"));
+			} else {
+				System.out.println("Check configserver.properties");
+				System.out.println("portRmi value is empty");
+				System.exit(-1);
+			}
+			if(!configFile.getProperty("portServer").isEmpty()){
+				portServer = Integer.parseInt(configFile.getProperty("portServer"));
+			} else {
+				System.out.println("Check configserver.properties");
+				System.out.println("portServer value is empty");
+				System.exit(-1);
+			}
+			if(!configFile.getProperty("portExecutor").isEmpty()){
+				portExecutor = Integer.parseInt(configFile.getProperty("portExecutor"));
+			} else {
+				System.out.println("Check configserver.properties");
+				System.out.println("portExecutor value is empty");
+				System.exit(-1);
+			}
+			if(!configFile.getProperty("jreBinFolder").isEmpty()){
+				jreBinFolder = configFile.getProperty("jreBinFolder");
+			} else {
+				System.out.println("Check configserver.properties");
+				System.out.println("jreBinFolder value is empty");
+				System.exit(-1);
+			}
+						
+			// We change the password
+			String cypheredPass = cypher(pass);
+			File passwdFile = new File(".auth");
+			if(passwdFile.exists()) {
+				// Make a backup
+				passwdFile.renameTo(new File(".auth_bak"));
+				passwdFile.delete();
+			}
+			if(passwdFile.createNewFile()) {
+				BufferedWriter bw = new BufferedWriter(new FileWriter(passwdFile));
+				bw.append(cypheredPass);
+				bw.close();
+				passwdFile.setReadable(false, false);
+				passwdFile.setReadable(true, true);
+				passwdFile.setWritable(false, false);
+			} else {
+				System.out.println("Couldn't create file: check permissions");
+				System.exit(-1);
 			}
 			
+			System.getProperties().put("java.rmi.server.hostname", host);
+			
 			// Read password if there is a file
-			File passwdFile = new File(".auth");
-			String pass = null;
+			pass = null;
 			if(passwdFile.exists()) {
 				BufferedReader br = new BufferedReader(new FileReader(passwdFile));
 				pass = br.readLine();
 			}
-			
-			System.getProperties().put("java.rmi.server.hostname", host);
 			
 			OptsicomServer server = new OptsicomServer(portServer, portExecutor, jreBinFolder);
 			if(pass != null) {
@@ -372,7 +407,15 @@ public class OptsicomServer extends UnicastRemoteObject implements OptsicomRemot
 			Registry registry = LocateRegistry.getRegistry("127.0.0.1",portRmi);	
 			registry.rebind("optsicom",server);
 			System.out.println("Server bound in registry");
-			
+		//mgarcia: Optiscom Res evolution
+		} catch (FileNotFoundException e) {
+			System.out.println("Server err: configserver.properties doesn't exist");
+		    e.printStackTrace();
+		} catch (NullPointerException e) {
+			System.out.println("Server err: Check configserver.properties");
+			System.out.println("Server err: Wrong number of properties");
+			System.out.println("Server err: <password> <host> <portRmi> <portServer> <portExecutor> <jreBinFolder>");
+			e.printStackTrace();
 		} catch (Exception e) {
 		    System.out.println("Server err: " + e.getMessage());
 		    e.printStackTrace();
