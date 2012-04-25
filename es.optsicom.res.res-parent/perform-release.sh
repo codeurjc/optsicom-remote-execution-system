@@ -33,7 +33,7 @@ export PATH=$PATH:$M2
 cd trunk/es.optsicom.res.res-parent
 
 # Prepare release versions
-mvn org.sonatype.tycho:tycho-versions-plugin:set-version -Dtycho.mode=maven -DnewVersion=$releaseVersion
+mvn org.eclipse.tycho:tycho-versions-plugin:set-version -Dtycho.mode=maven -DnewVersion=$releaseVersion
 
 # Perform build with the release version
 mvn clean deploy
@@ -47,7 +47,7 @@ svn copy https://code.sidelab.es/svn/optsicomres/res/trunk/ https://code.sidelab
 
 # Prepare next development version
 cd es.optsicom.res.res-parent
-mvn org.sonatype.tycho:tycho-versions-plugin:set-version -Dtycho.mode=maven -DnewVersion=$nextVersion
+mvn org.eclipse.tycho:tycho-versions-plugin:set-version -Dtycho.mode=maven -DnewVersion=$nextVersion
 
 # Commit changes to trunk (trunk now contains the new development version)
 cd ..
