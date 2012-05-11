@@ -13,7 +13,7 @@
   <name>Optsicom Remote Experiment System - Parent</name>
   <url>${optsicomres-url}</url>
   
-  <description>Launching experiments remotely from the IDE</description>
+  <description>Launching experiments remotely from the IDE.</description>
   
   <issueManagement>
   	<url>http://code.sidelab.es/projects/optsicomres/issues</url>
