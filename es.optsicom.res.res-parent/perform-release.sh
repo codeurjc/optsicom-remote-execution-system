@@ -39,6 +39,10 @@ mvn org.eclipse.tycho:tycho-versions-plugin:set-version -Dtycho.mode=maven -Dnew
 # Perform build with the release version
 mvn clean deploy -DforceContextQualifier=$timestamp
 
+# Check user
+user=`whoami`
+echo $user
+
 # Commit changes (preparing for tagging)
 cd ..
 svn ci -m "prepare release optsicom-res-$tagVersion" --username $3 --password $4
