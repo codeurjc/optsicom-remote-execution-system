@@ -120,7 +120,7 @@
              </plugin> 
   			<plugin>
   				<groupId>org.eclipse.tycho</groupId>
-  				<artifactId>maven-osgi-compiler-plugin</artifactId>
+  				<artifactId>tycho-compiler-plugin</artifactId>
   				<version>${tycho-version}</version>
   			</plugin>
   			<plugin>
@@ -149,7 +149,7 @@
   			</plugin>
   			<plugin>
   				<groupId>org.eclipse.tycho</groupId>
-  				<artifactId>maven-osgi-packaging-plugin</artifactId>
+  				<artifactId>tycho-packaging-plugin</artifactId>
   				<version>${tycho-version}</version>
   				<configuration>
 					<strictVersions>false</strictVersions>
