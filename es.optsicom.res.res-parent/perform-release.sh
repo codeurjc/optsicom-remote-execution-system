@@ -12,7 +12,8 @@ tagVersion=$1
 # With this approach, p2 generation fails saying that version-timestamp is not a
 # valid sustitution pattern for version.qualifier
 #releaseVersion=$tagVersion-$timestamp
-releaseVersion=$tagVersion.$timestamp
+#releaseVersion=$tagVersion.$timestamp
+releaseVersion=$tagVersion
 nextVersion=$2.qualifier
 
 echo "tagVersion=$tagVersion"
@@ -36,7 +37,7 @@ cd trunk/es.optsicom.res.res-parent
 mvn org.eclipse.tycho:tycho-versions-plugin:set-version -Dtycho.mode=maven -DnewVersion=$releaseVersion
 
 # Perform build with the release version
-mvn clean deploy
+mvn clean deploy -DforceContextQualifier=$timestamp
 
 # Commit changes (preparing for tagging)
 cd ..
