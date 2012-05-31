@@ -10,7 +10,7 @@ fi
 timestamp=`date -u +%Y%m%d%H%M`
 tagVersion=$1
 # With this approach, p2 generation fails saying that version-timestamp is not a
-# valid sustitution pattern for version.qualifier
+#valid sustitution pattern for version.qualifier
 #releaseVersion=$tagVersion-$timestamp
 #releaseVersion=$tagVersion.$timestamp
 releaseVersion=$tagVersion
