@@ -212,4 +212,5 @@ public class ProjectDependenciesResolver {
 	public IJavaProject getJavaProject() {
 		return javaProject;
 	}
+	
 }
