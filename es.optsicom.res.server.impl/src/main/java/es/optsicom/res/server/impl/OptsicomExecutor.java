@@ -11,8 +11,6 @@
  * **************************************************************************** */
 package es.optsicom.res.server.impl;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,25 +28,28 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.concurrent.Semaphore;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
-
-import javax.sound.midi.Patch;
 
 import es.optsicom.res.server.OptsicomRemoteExecutor;
 import es.optsicom.res.server.PaqueteDatos;
 
 public class OptsicomExecutor extends UnicastRemoteObject implements OptsicomRemoteExecutor, Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3025111962189907958L;
+	
 	private transient OptsicomServer server;
 	private long offset;
 	private List<String> librerias = new ArrayList<String>();
 	private String workingDir;
-	
-
+	//mgarcia: Optsicom Res evolution
+	private static final String RESULTINGFILES = "ResultingFiles";
+	private WatchDirThread watchDirThread;
+	private InputStream in;
+		
 	//Constructor de la clase
 	public OptsicomExecutor(OptsicomServer veexServer) throws RemoteException {
 		super(veexServer.getExecutorPort());
@@ -59,6 +60,7 @@ public class OptsicomExecutor extends UnicastRemoteObject implements OptsicomRem
 	/*
 	 * Metodos privados del executor
 	 */
+	@SuppressWarnings("unchecked")
 	public int uncompressZipFile(String zipName,String zipDir){
 		File directorio = new File(zipDir);
 		try {
@@ -176,14 +178,14 @@ public class OptsicomExecutor extends UnicastRemoteObject implements OptsicomRem
 	
 	//Metodo para lanzar el jar
 	public String launch(String mode,String password,String host,String portRmi,/*String portServer,*/String portDebug,
-			String vmargs,String prgarg,String mainClass,String zipName) throws RemoteException {
+			String[] vmargs,String[] prgarg,String mainClass,String zipName) throws RemoteException {
 		try {
 			/*
 			 * DESCOMPRIMIMOS EL ZIP Y EJECUTAMOS
 			 */
 			
 			//Obtencion del directorio de trabajo
-	    	String ruta = System.getProperty("user.dir");
+			String ruta = System.getProperty("user.dir");
 			zipName = ruta.concat(File.separator+zipName);
 			int indice = zipName.lastIndexOf(".");
 			String zipdir = zipName.substring(0,indice)+File.separator;
@@ -193,31 +195,61 @@ public class OptsicomExecutor extends UnicastRemoteObject implements OptsicomRem
 			String command=null;
 			
 			Process p = null;
+			
 			String javaProgram = server.getJavaProgram();
 			String[] argumentos = null;
-			if (vmargs == null || "".equals(vmargs)){
+			//mgarcia: Optsicom res evolution
+			StringBuffer vmargsBuffer = new StringBuffer();
+			if((vmargs != null) && (vmargs.length > 0)){
+				vmargsBuffer.append(vmargs[0]);
+				int elements = 1;
+				while(elements < vmargs.length){
+					vmargsBuffer.append(" ");
+					vmargsBuffer.append(vmargs[elements]);
+					elements++;
+				}
+			} else {
+				vmargsBuffer.append("");
+			}
+			
+			StringBuffer prgargBuffer = new StringBuffer();
+			if((prgarg != null) && (prgarg.length > 0)){
+				prgargBuffer.append(prgarg[0]);
+				int elements = 1;
+				while(elements < vmargs.length){
+					prgargBuffer.append(" ");
+					prgargBuffer.append(prgarg[elements]);
+					elements++;
+				}
+			} else {
+				prgargBuffer.append("");
+			}
+			
+			if ((vmargs == null) || (vmargs.length == 0)){
 				if ("debug".equals(mode)) {
 					argumentos=new String[] {javaProgram,"-Xdebug","-Xrunjdwp:transport=dt_socket,address="+portDebug+",server=y",
 						"-cp",cp,mainClass};
 				} else {
 					argumentos=new String[] {javaProgram,"-cp",cp,mainClass};
 				}
-				System.out.println("No hay vmargs:"+vmargs);
+				System.out.println("No hay vmargs");
 			} else {
 				if ("debug".equals(mode)) {
 					argumentos=new String[] {javaProgram,"-Xdebug","-Xrunjdwp:transport=dt_socket,address="+portDebug+",server=y",
-						vmargs,"-cp",cp,mainClass};
+							vmargsBuffer.toString(),"-cp",cp,mainClass};
 				} else {
-					argumentos=new String[] {javaProgram,vmargs,"-cp",cp,mainClass};
+					argumentos=new String[] {javaProgram,vmargsBuffer.toString(),"-cp",cp,mainClass};
 				}
-				System.out.println("Si hay: "+vmargs);
+				System.out.println("Si hay vmargs: "+vmargsBuffer.toString());
 				
 			}
 			System.out.println("args: "+Arrays.toString(argumentos));
+			//mgarcia: Optsicom res Evolution			
+			startWatchDir(zipdir);
 			p = Runtime.getRuntime().exec(argumentos, null, new File(zipdir, workingDir));
 			
-			return server.saveConsolefile(p,password,command,host,portRmi,/*portServer,*/portDebug,vmargs,prgarg,mainClass,zipName);			
-			
+			return server.saveConsolefile(p,password,command,host,portRmi,/*portServer,*/portDebug,vmargsBuffer.toString(),prgargBuffer.toString(),mainClass,zipName);
+		
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
@@ -283,4 +315,142 @@ public class OptsicomExecutor extends UnicastRemoteObject implements OptsicomRem
 			}	
 		}
 	}	
+	
+	//mgarcia: Optsicom res Evolution
+	private void startWatchDir(String dir) {
+		this.watchDirThread = new WatchDirThread();
+		watchDirThread.setDir(dir);
+		watchDirThread.start();
+	}
+	
+	//mgarcia: Optsicom res Evolution
+	public List<File> checkResultFiles(String idjob) throws RemoteException {
+		for (;;){
+			if (hasProcessFinished(idjob)){
+				break;
+			}
+		}
+		watchDirThread.setExecutionFinished(true);
+		
+		List<File> resultingFiles = watchDirThread.getResultFiles();
+		
+		try {
+			watchDirThread.closeWatchDir();
+		} catch (IOException ioexception){
+			ioexception.printStackTrace();
+		}
+		
+		return resultingFiles;
+	}
+	
+	//mgarcia: Optsicom res Evolution
+	public long getResultsFileLength(String id) {
+		
+		String serverPath = System.getProperty("user.dir");
+		
+		StringBuffer resultingFilesPath = new StringBuffer();
+		resultingFilesPath.append(serverPath);
+		resultingFilesPath.append(File.separator);
+		resultingFilesPath.append(RESULTINGFILES);
+		resultingFilesPath.append(File.separator);
+		resultingFilesPath.append(RESULTINGFILES + id + ".zip");
+				
+		File resultingFiles = new File(resultingFilesPath.toString()); 
+		
+		return resultingFiles.length();
+		
+	}
+	
+	//mgarcia: Optsicom res Evolution
+	public void createFileInputString(String idjob) throws RemoteException{
+		
+		String serverPath = System.getProperty("user.dir");
+		
+		StringBuffer resultingFilesPath = new StringBuffer();
+		resultingFilesPath.append(serverPath);
+		resultingFilesPath.append(File.separator);
+		resultingFilesPath.append(RESULTINGFILES);
+		resultingFilesPath.append(File.separator);
+		resultingFilesPath.append(RESULTINGFILES + idjob + ".zip");
+				
+		File resultingFiles = new File(resultingFilesPath.toString()); 
+				
+		try {
+			in = new FileInputStream(resultingFiles);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	//mgarcia: Optsicom res Evolution
+	public PaqueteDatos readResultsFile(String idjob, int offset) {
+		
+			byte[] buf = new byte[1024];
+			int longitud;
+	    	
+			PaqueteDatos pd = null;
+			
+			try {
+				if ((longitud= in.read(buf)) > 0){
+					pd = new PaqueteDatos(buf,longitud);
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				pd = null;
+			}
+			
+			
+			return pd;
+		
+		
+	}
+	
+	//mgarcia: Optsicom res Evolution
+	public void closeFileInputString(String idjob) throws RemoteException{
+		
+		try {
+			in.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	//mgarcia: Optsicom res Evolution
+	public String createZipResultingFiles(List<File> resultingFiles, String idjob) throws RemoteException{
+		
+		final ZipCreator zc = new ZipCreator();
+		
+		String serverPath = System.getProperty("user.dir");
+		
+		StringBuffer resultingFilesPath = new StringBuffer();
+		resultingFilesPath.append(serverPath);
+		resultingFilesPath.append(File.separator);
+		resultingFilesPath.append(RESULTINGFILES);
+		
+		File resultingFilesDir = new File(resultingFilesPath.toString()); 
+		if(!resultingFilesDir.exists()){
+			resultingFilesDir.mkdir();
+		}
+		
+		//Paths para los ficheros jar y zip
+		File zipFileFolder = new File(serverPath, RESULTINGFILES);
+		File zipFile = new File(zipFileFolder, RESULTINGFILES + idjob + ".zip");
+		String nombreZip = zipFile.getAbsolutePath();
+		
+		final File[] filesZip = resultingFiles.toArray(new File[resultingFiles.size()]);
+		zc.setBaseDir(serverPath);
+		
+		try {
+			zc.zip(filesZip, nombreZip);
+		} catch (ZipCreatorException e) {
+			e.printStackTrace();
+		}
+		
+		return RESULTINGFILES + idjob + ".zip";
+		
+	}
+	
 }

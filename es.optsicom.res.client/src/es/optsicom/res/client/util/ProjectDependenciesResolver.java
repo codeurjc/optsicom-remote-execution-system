@@ -12,6 +12,7 @@
 package es.optsicom.res.client.util;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +24,8 @@ import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.swt.widgets.Shell;
 
 import es.optsicom.res.client.RESClientPlugin;
 
@@ -68,8 +71,9 @@ public class ProjectDependenciesResolver {
 	 * <li>{@link #getClasspathFiles()} returns the list of {@link File}s that are needed
 	 * by the project, including source containers.</li>
 	 * </ul>
+	 * @throws DependenciesResolverException 
 	 */
-	public void resolveDependencies() {
+	public void resolveDependencies() throws DependenciesResolverException {
 		dependencies = new ArrayList<String>();
 		classpath = new ArrayList<String>();
 		classpathFiles = new ArrayList<File>();
@@ -78,6 +82,8 @@ public class ProjectDependenciesResolver {
 			calculateDependencies(cpes, javaProject.getProject());
 		} catch (JavaModelException e) {
 			RESClientPlugin.log(e);
+		} catch (DependenciesResolverException e) {
+			throw new DependenciesResolverException();
 		}
 	}
 	
@@ -86,7 +92,7 @@ public class ProjectDependenciesResolver {
 	 * The zip file creator is responsible of making these files relative with respect to the workspace
 	 * when adding the files to the zip file.
 	 */
-	private void calculateDependencies(IClasspathEntry[] cpe, IProject project){
+	private void calculateDependencies(IClasspathEntry[] cpe, IProject project) throws DependenciesResolverException{
 		try {
 			
 			IWorkspace workspace = project.getWorkspace();
@@ -122,11 +128,16 @@ public class ProjectDependenciesResolver {
 					if(tipo == IClasspathEntry.CPE_LIBRARY){
 						
 						String dep = cpEntry.getPath().makeRelativeTo(workspacePath).toString();
-						classpathFiles.add(new File(workspacePath.toFile(), cpEntry.getPath().toOSString()));
+						//mgarcia: Optsicom res Evolution
+						if(new File(workspacePath.toFile(), cpEntry.getPath().toOSString()).exists()){ 
+							classpathFiles.add(new File(workspacePath.toFile(), cpEntry.getPath().toOSString()));
 						
-						//Añadimos las dependencias a las properties
-						RESClientPlugin.log("Adding library: " + dep);
-						classpath.add(cpEntry.getPath().toString());
+							//Añadimos las dependencias a las properties
+							RESClientPlugin.log("Adding library: " + dep);
+							classpath.add(cpEntry.getPath().toString());
+						} else {
+							throw new DependenciesResolverException();
+						}
 						
 					} else if (tipo == IClasspathEntry.CPE_PROJECT){
 						

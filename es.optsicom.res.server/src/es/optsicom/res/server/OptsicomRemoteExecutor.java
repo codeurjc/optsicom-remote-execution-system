@@ -25,10 +25,17 @@ public interface OptsicomRemoteExecutor extends Remote {
 	public void setJarDirs(List<String> librerias) throws RemoteException;
 	public void setWorkingDir(String dir) throws RemoteException;
 	public String launch(String mode,String password,String host,String portRmi,/*String portServer,*/String portDebug,
-			String vmarg,String prgarg,String mainClass,String zipName) throws RemoteException;
+			String[] vmarg,String[] prgarg,String mainClass,String zipName) throws RemoteException;
 	public String readConsole(String idjob) throws RemoteException;
 	public String getState(String id) throws RemoteException;
 	public void setState(String id,String state) throws RemoteException;
 	public boolean hasProcessFinished(String id) throws RemoteException;
+	//mgarcia: Optiscom Res evolution
+	public String createZipResultingFiles(List<File> resultingFiles, String idjob) throws RemoteException;
+	public PaqueteDatos readResultsFile(String idjob, int offset) throws RemoteException;
+	public long getResultsFileLength(String idjob) throws RemoteException;
+	public List<File> checkResultFiles(String idjob) throws RemoteException;
+	public void createFileInputString(String idjob) throws RemoteException;
+	public void closeFileInputString(String idjob) throws RemoteException;
 	
 }

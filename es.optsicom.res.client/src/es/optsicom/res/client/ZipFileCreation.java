@@ -25,6 +25,7 @@ import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.core.IJavaProject;
 
+import es.optsicom.res.client.util.DependenciesResolverException;
 import es.optsicom.res.client.util.ProjectDependenciesResolver;
 import es.optsicom.res.client.util.ZipCreator;
 import es.optsicom.res.client.util.ZipCreatorException;
@@ -64,7 +65,7 @@ public class ZipFileCreation {
 	 * @param monitor A monitor that is used to report progress
 	 * @return The resulting status of the operation
 	 */
-	public IStatus create(SubMonitor monitor) {
+	public IStatus create(SubMonitor monitor) throws DependenciesResolverException {
 		monitor.beginTask("Creating zip file", 2);
 
 		//Variables para el envio de los ficheros .jar y .zip

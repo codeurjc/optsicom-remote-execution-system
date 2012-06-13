@@ -11,6 +11,7 @@
  * **************************************************************************** */
 package es.optsicom.res.client.login;
 
+import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.jface.wizard.Wizard;
 
 import es.optsicom.res.client.launcher.remote.RemoteVersionedJavaShortcut;
@@ -44,8 +45,8 @@ public class ServerConfigurationWizard extends Wizard {
 		rvjs.setPassword(configurationPage.getPasswd());
 		rvjs.setHost(configurationPage.getHost());
 		rvjs.setPortRmi(configurationPage.getPortRMI());
-		rvjs.setVMarg(configurationPage.getVMArgs());
-		rvjs.setPrgarg(configurationPage.getProgramArgs());
+		rvjs.setVMarg(DebugPlugin.parseArguments(configurationPage.getVMArgs()));
+		rvjs.setPrgarg(DebugPlugin.parseArguments(configurationPage.getProgramArgs()));
 		rvjs.setPortDebug(configurationPage.getVMDebugPort());
 		rvjs.setSalir(false);
 		

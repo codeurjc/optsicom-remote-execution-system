@@ -20,7 +20,6 @@ import java.util.Map;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
@@ -48,12 +47,10 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.internal.dnd.SwtUtil;
 
 import es.optsicom.res.client.RESClientPlugin;
-import es.optsicom.res.client.ZipFileCreation;
+import es.optsicom.res.client.launcher.remote.delegate.IJavaRemoteServerConfigurationConstants;
 import es.optsicom.res.client.login.ServerConfigurationWizard;
-import es.optsicom.res.client.util.ProjectDependenciesResolver;
 
 
 
@@ -66,8 +63,8 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 	private String host = null;
 	private String portRmi = null;
 	private String portDebug = null;
-	private String vmargs = null;
-	private String prgargs = null;
+	private String[] vmargs = null;
+	private String[] prgargs = null;
 	
 	private boolean salir = false;
 	
@@ -121,21 +118,58 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 			//Configuracion del ShortCut
 			ILaunchConfigurationType configType = getConfigurationType();
 			wc = configType.newInstance(null, getLaunchManager().generateUniqueLaunchConfigurationNameFrom(type.getTypeQualifiedName('.')));
+			//mgarcia: prueba run configuration
+			wc.setAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME,
+					type.getFullyQualifiedName());
+			
 			wc.setAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME,
 					type.getJavaProject().getElementName());
 			wc.setAttribute(IJavaLaunchConfigurationConstants.ATTR_VM_CONNECTOR,
 					JavaRuntime.getDefaultVMConnector().getIdentifier());
 			
+			if(prgargs.length > 0){
+				StringBuffer prgargsBuffer = new StringBuffer();
+				prgargsBuffer.append(prgargs[0]);
+				if(prgargs.length>1){
+					for (int i=1;i<prgargs.length;i++) {
+						prgargsBuffer.append(" ");
+						prgargsBuffer.append(prgargs[i]);
+					}
+				}
+				wc.setAttribute(IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS, prgargsBuffer.toString());
+			}
+			
+			if(vmargs.length > 0){
+				StringBuffer vmargsBuffer = new StringBuffer();
+				vmargsBuffer.append(vmargs[0]);
+				if(vmargs.length>1){
+					for (int i=1;i<vmargs.length;i++) {
+						vmargsBuffer.append(" ");
+						vmargsBuffer.append(vmargs[i]);
+					}
+				}
+				wc.setAttribute(IJavaLaunchConfigurationConstants.ATTR_VM_ARGUMENTS, vmargsBuffer.toString());
+			}
+			
 			attrMap.put("hostname",host);
 			
 			if (mode.equals("debug")){
 				attrMap.put("port",portDebug);
-			}
-			else{
+				wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_DEBUG, portDebug);
+			} else {
 				attrMap.put("port","0");
+				wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_DEBUG, "0");
 			}
 			
 			wc.setAttribute(IJavaLaunchConfigurationConstants.ATTR_CONNECT_MAP, attrMap);
+			
+			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_REMOTE_SERVER, host);
+			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_RMI, portRmi);
+			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PASSWORD, password);
+			
+			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_SELECTED_RESOURCES, selectedResources);
+			
+			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_DEBUG_CONFIGURATION, false);
 			
 			//Configuracion de los ficheros fuentes que va a admitir
 			addSourceLocations(wc, new Path(zipFile));
@@ -182,8 +216,8 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 	
 	protected void launch(final IType type, final String mode) {
 
-		ProjectDependenciesResolver dependenciesResolver = new ProjectDependenciesResolver(type.getJavaProject());
-		dependenciesResolver.resolveDependencies();
+		//ProjectDependenciesResolver dependenciesResolver = new ProjectDependenciesResolver(type.getJavaProject());
+		//dependenciesResolver.resolveDependencies();
 		
 		WizardDialog wd = new WizardDialog(getShell(), new ServerConfigurationWizard(mode, this));
 		wd.create();
@@ -280,11 +314,11 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 		this.portDebug = port;
 	}
 
-	public void setVMarg(String vMarg) {
+	public void setVMarg(String[] vMarg) {
 		this.vmargs = vMarg;
 	}
 	
-	public void setPrgarg(String prgarg) {
+	public void setPrgarg(String[] prgarg) {
 		this.prgargs = prgarg;
 	}
 

@@ -11,12 +11,16 @@
  * **************************************************************************** */
 package es.optsicom.res.client.login;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.Naming;
 import java.util.StringTokenizer;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.preferences.InstanceScope;
+import org.eclipse.equinox.security.storage.ISecurePreferences;
+import org.eclipse.equinox.security.storage.SecurePreferencesFactory;
+import org.eclipse.equinox.security.storage.StorageException;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
@@ -42,6 +46,8 @@ import es.optsicom.res.server.OptsicomRemoteServer;
 public class ServerConfigurationPage extends WizardPage {
 
 	private static final String SERVERS = "SERVERS";
+	//mgarcia: Optiscom Res evolution 
+	private static final String OPTSICOM = "/optsicom";
 	private Text txtPass;
 	private Text txtHost;
 	private Text txtPortRmi;
@@ -50,6 +56,8 @@ public class ServerConfigurationPage extends WizardPage {
 	private Text txtPrgarg;
 	private String mode;
 	private boolean connectionValid = false;
+	//mgarcia: Optiscom Res evolution 
+	private ISecurePreferences root;
 
 	protected ServerConfigurationPage(String mode) {
 		super("ServerConfiguration");
@@ -85,6 +93,9 @@ public class ServerConfigurationPage extends WizardPage {
 			RESClientPlugin.log(e);
 		}
 		
+		//mgarcia: Optsicom res Evolution
+		root = SecurePreferencesFactory.getDefault();
+		
 		savedConnections.setItems(serverNames);
 		savedConnections.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -97,7 +108,19 @@ public class ServerConfigurationPage extends WizardPage {
 				StringTokenizer st = new StringTokenizer(parameters, ":");
 				txtHost.setText(st.nextToken());
 				txtPortRmi.setText(st.nextToken());
-				
+				//mgarcia: Optsicom res Evolution
+				if (root != null) {
+					if (root.nodeExists(OPTSICOM)) {
+						ISecurePreferences node = root.node(OPTSICOM);
+						try {
+							if(node.get(c.getItem(itemSelected), null) != null){
+								txtPass.setText(node.get(c.getItem(itemSelected), null));
+							}
+						} catch (StorageException e1) {
+							RESClientPlugin.log(e1);
+						}
+					} 
+				}
 			}
 		});
 			 
@@ -184,6 +207,20 @@ public class ServerConfigurationPage extends WizardPage {
 					} catch (BackingStoreException e1) {
 						RESClientPlugin.log(e1);
 						MessageDialog.openError(getShell(), "Saving settings", "Unable to store settings: " + e1.getMessage());
+					}
+					//mgarcia: Optsicom res Evolution
+					if (root != null) {
+						ISecurePreferences node = root.node(OPTSICOM);
+						if (!txtPass.getText().equalsIgnoreCase("")) {
+							try {
+								node.put(configName, txtPass.getText(), false);
+								node.flush();
+							} catch (StorageException e1) {
+								RESClientPlugin.log(e1);
+							} catch (IOException e2) {
+								RESClientPlugin.log(e2);
+							} 
+						}
 					}
 				}
 			}

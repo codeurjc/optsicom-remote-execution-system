@@ -13,11 +13,14 @@ package es.optsicom.res.client.launcher.remote;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.rmi.Naming;
+import java.rmi.RemoteException;
 import java.util.List;
 
 import org.eclipse.core.resources.IWorkspace;
@@ -38,10 +41,12 @@ import org.eclipse.ui.preferences.ScopedPreferenceStore;
 
 import es.optsicom.res.client.RESClientPlugin;
 import es.optsicom.res.client.ZipFileCreation;
+import es.optsicom.res.client.util.DependenciesResolverException;
 import es.optsicom.res.client.util.ProjectDependenciesResolver;
 import es.optsicom.res.server.OptsicomRemoteExecutor;
 import es.optsicom.res.server.OptsicomRemoteServer;
 import es.optsicom.res.server.PaqueteDatos;
+
 
 public class RemoteExecutionJob extends Job {
 
@@ -50,8 +55,8 @@ public class RemoteExecutionJob extends Job {
 	private String portDebug;
 	private String password;
 	private String mainClass;
-	private String vmArgs;
-	private String programArgs;
+	private String[] vmArgs;
+	private String[] programArgs;
 	private String zipName;
 	private String mode;
 	private ProjectDependenciesResolver resolver;
@@ -59,7 +64,9 @@ public class RemoteExecutionJob extends Job {
 	private IJavaProject project;
 	//mgarcia: Optsicom Res evolution
 	private static final String OPTSICOMRESOUTPUT = "OptsicomRESOutput";
+	private static final String RESULTINGFILES = "ResultingFiles";
 	
+		
 	public RemoteExecutionJob() {
 		super("Remote Execution");
 	}
@@ -75,15 +82,19 @@ public class RemoteExecutionJob extends Job {
 			subMonitor.subTask("Creating zip file");
 			ZipFileCreation zipjob = new ZipFileCreation(project);
 			zipjob.setUserSelectedResources(userSelectedResources);
-			IStatus status = zipjob.create(subMonitor.newChild(1));
-			
-			if (subMonitor.isCanceled()) {
-				return new Status(IStatus.CANCEL, RESClientPlugin.PLUGIN_ID, "Operation has been cancelled");
-			}
-						
-			if(!status.isOK()) {
-				RESClientPlugin.log("Problems exporting zip file: " + status.getMessage());
-				return new Status(IStatus.ERROR, RESClientPlugin.PLUGIN_ID, "Error creating zip file");
+			try {
+				IStatus status = zipjob.create(subMonitor.newChild(1));
+							
+				if (subMonitor.isCanceled()) {
+					return new Status(IStatus.CANCEL, RESClientPlugin.PLUGIN_ID, "Operation has been cancelled");
+				}
+				
+				if(!status.isOK()) {
+					RESClientPlugin.log("Problems exporting zip file: " + status.getMessage());
+					return new Status(IStatus.ERROR, RESClientPlugin.PLUGIN_ID, "Error creating zip file");
+				}
+			} catch (DependenciesResolverException e) {
+				return new Status(IStatus.INFO, RESClientPlugin.PLUGIN_ID, "Remote execution doesn't support dependencies not included in the workspace");
 			}
 			
 			this.setZipName(zipjob.getZipName());
@@ -140,6 +151,14 @@ public class RemoteExecutionJob extends Job {
 			ScopedPreferenceStore sps =  (ScopedPreferenceStore) RESClientPlugin.getDefault().getPreferenceStore();
 			sps.putValue(idjob,host+":"+portRMI);
 
+			//mgarcia: Optiscom Res evolution
+			subMonitor.subTask("Getting resulting files");
+			getResultingFile(executor,idjob);
+			subMonitor.worked(1);
+			if (subMonitor.isCanceled()) {
+				return new Status(IStatus.CANCEL, RESClientPlugin.PLUGIN_ID, "Operation has been cancelled");
+			}
+									
 			subMonitor.subTask("Opening remote console");
 			openConsole(executor,idjob);
 			subMonitor.worked(1);
@@ -291,6 +310,78 @@ public class RemoteExecutionJob extends Job {
 			}
 		}.start();	
 	}
+	
+	//mgarcia; Evolution Optsicom Res
+	public void getResultingFile(final OptsicomRemoteExecutor executor,final String idjob) {
+		
+		new Thread(){
+			public void run(){
+				try {
+					List<File> resultingFiles = executor.checkResultFiles(idjob);
+					if(!resultingFiles.isEmpty()){
+						executor.createZipResultingFiles(resultingFiles,idjob);
+						getZipResultingFile(executor, idjob);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}.start();	
+		
+	}
+	
+	private void getZipResultingFile(OptsicomRemoteExecutor executor,String idjob){
+		try {
+			long fileLenght = executor.getResultsFileLength(idjob);
+			IWorkspace ws = ResourcesPlugin.getWorkspace();
+			String workSpaceRoot = ws.getRoot().getLocation().toOSString();
+			String projectName = resolver.getJavaProject().getElementName();
+			StringBuffer executionResultsPath = new StringBuffer();
+			executionResultsPath.append(workSpaceRoot);
+			executionResultsPath.append(File.separator);
+			executionResultsPath.append(projectName);
+			executionResultsPath.append(File.separator);
+			executionResultsPath.append(OPTSICOMRESOUTPUT);
+			
+			File wFile = new File(executionResultsPath.toString()); 
+			if(!wFile.exists()){
+				wFile.mkdir();
+			}
+			wFile = new File(executionResultsPath.toString(), RESULTINGFILES + idjob +  ".zip");
+			
+			try {
+				
+				executor.createFileInputString(idjob);
+				
+				OutputStream os;
+				os = new FileOutputStream(wFile,true);
+				
+				PaqueteDatos pd = null;
+				int longitud = 0;
+				while(fileLenght > longitud){
+					pd = executor.readResultsFile(idjob,longitud);
+					if(pd!=null){
+						if( pd.getLongitud() > 0){
+							os.write(pd.getBuf(),0,pd.getLongitud());
+							longitud += pd.getLongitud();
+							os.flush();
+						}
+					}
+					
+				}
+				os.close();
+				
+				executor.closeFileInputString(idjob);
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		
+		} catch (RemoteException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	}
 
 
 
@@ -314,11 +405,11 @@ public class RemoteExecutionJob extends Job {
 		this.mainClass = mainClass;
 	}
 
-	public void setVmArgs(String vmArgs) {
+	public void setVmArgs(String[] vmArgs) {
 		this.vmArgs = vmArgs;
 	}
 
-	public void setProgramArgs(String programArgs) {
+	public void setProgramArgs(String[] programArgs) {
 		this.programArgs = programArgs;
 	}
 
