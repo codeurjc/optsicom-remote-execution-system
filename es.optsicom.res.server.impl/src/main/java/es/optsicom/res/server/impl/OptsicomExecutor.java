@@ -404,7 +404,6 @@ public class OptsicomExecutor extends UnicastRemoteObject implements OptsicomRem
 			
 			return pd;
 		
-		
 	}
 	
 	//mgarcia: Optsicom res Evolution
@@ -454,3 +453,4 @@ public class OptsicomExecutor extends UnicastRemoteObject implements OptsicomRem
 	}
 	
 }
+
