@@ -92,7 +92,7 @@
           sourcePathComputerId="org.eclipse.jdt.launching.sourceLookup.javaSourcePathComputer">
     </launchConfigurationType>
     <launchConfigurationType
-          delegate="org.eclipse.jdt.internal.launching.JavaRemoteApplicationLaunchConfigurationDelegate"
+          delegate="es.optsicom.res.client.launcher.remote.delegate.RemoteVersionedLaunchConfigurationDelegate"
           id="es.optsicom.res.client.launcher.remote.launchConfigurationType"
           migrationDelegate="org.eclipse.jdt.internal.launching.JavaMigrationDelegate"
           modes="run,debug"
@@ -120,7 +120,7 @@
        </launchMode>
     </launchConfigurationTabGroup>
     <launchConfigurationTabGroup
-          class="org.eclipse.jdt.internal.debug.ui.launcher.RemoteJavaApplicationTabGroup"
+          class="es.optsicom.res.client.launcher.remote.tabs.RemoteTabs"
           id="Remote Java Versioned Tab Group"
           type="es.optsicom.res.client.launcher.remote.launchConfigurationType">
        <launchMode
@@ -171,14 +171,14 @@
        point="org.eclipse.ui.views">
     <category
           id="es.optsicom.res.client.views.OptsicomCategory"
-          name="Optsicom Category">
+          name="Optsicom RES">
     </category>
     <view
           category="es.optsicom.res.client.views.OptsicomCategory"
           class="es.optsicom.res.client.views.OptsicomView"
           icon="icons/icon-optsicom-16x16.png"
           id="es.optsicom.res.client.views.OptsicomView"
-          name="Optsicom View">
+          name="Optsicom RES">
     </view>
  </extension>
  <extension
@@ -198,6 +198,22 @@
     <contexts
           file="contexts.xml">
     </contexts>
+ </extension>
+ <extension
+       point="org.eclipse.ui.preferencePages">
+    <page
+          class="es.optsicom.res.client.preferences.OptsicomPreferencePage"
+          id="es.optsicom.res.client.preferences.preferencepage"
+          name="Optsicom Res">
+    </page>
+ </extension>
+ <extension
+       id="id1"
+       point="org.eclipse.equinox.security.secureStorage">
+    <provider
+          class="client.PasswordProvider:1"
+          priority="client.provider1">
+    </provider>
  </extension>
 
 
