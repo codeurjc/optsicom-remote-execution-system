@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Remote Experiment System client
 Bundle-SymbolicName: es.optsicom.res.client;singleton:=true
-Bundle-Version: 1.2.0.qualifier
+Bundle-Version: 1.1.0.qualifier
 Bundle-Activator: es.optsicom.res.client.RESClientPlugin
 Require-Bundle: org.eclipse.debug.ui,
  org.eclipse.jdt.launching,
