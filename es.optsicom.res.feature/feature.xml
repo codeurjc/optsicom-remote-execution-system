@@ -2,7 +2,7 @@
 <feature
       id="es.optsicom.res.feature"
       label="Optsicom Remote Experiment System"
-      version="1.1.0.qualifier"
+      version="1.1.0"
       provider-name="Optsicom"
       plugin="es.optsicom.res.client">
 
