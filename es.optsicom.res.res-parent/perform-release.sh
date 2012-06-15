@@ -31,7 +31,7 @@ export M2=$M2_HOME/bin
 export MAVEN_OPTS=-Dorg.apache.maven.global-settings=/home/usuario/apache-maven-3.0.3/conf/settings.xml
 export PATH=$PATH:$M2
 
-cd trunk/es.optsicom.res.res-parent
+cd es.optsicom.res.res-parent
 
 # Prepare release versions
 mvn org.eclipse.tycho:tycho-versions-plugin:set-version -Dtycho.mode=maven -DnewVersion=$releaseVersion
