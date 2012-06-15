@@ -1,0 +1,208 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  
+  <prerequisites>
+    <maven>3.0</maven>
+  </prerequisites>
+  
+  <groupId>es.optsicom.res</groupId>
+  <artifactId>res-parent</artifactId>
+  <version>1.1.0</version>
+  <packaging>pom</packaging>
+  
+  <name>Optsicom Remote Experiment System - Parent</name>
+  <url>${optsicomres-url}</url>
+  
+  <description>Launching experiments remotely from the IDE.</description>
+  
+  <issueManagement>
+  	<url>http://code.sidelab.es/projects/optsicomres/issues</url>
+  	<system>Redmine</system>
+  </issueManagement>
+  
+  <licenses>
+  	<license>
+  		<name>Eclipse Public License v1.0</name>
+  		<url>http://www.eclipse.org/legal/epl-v10.htm</url>
+  		<comments>
+  			Copyright (c) Sidelab and Optsicom Teams. 
+			This program and the accompanying materials are made available
+			under the terms of the Eclipse Public License v1.0 which
+			accompanies this distribution and is available at
+			http://www.eclipse.org/legal/epl-v10.htm
+		</comments>
+  	</license>
+  </licenses>
+  
+  
+  <modules>
+  	<module>../es.optsicom.res.client</module>
+  	<module>../es.optsicom.res.feature</module>
+  	<module>../es.optsicom.res.server</module>
+  	<module>../es.optsicom.res.client.p2</module>
+  	<module>../es.optsicom.res.server.impl</module>
+  </modules>
+  
+  <properties>
+  	<optsicomres-url>http://code.sidelab.es/projects/optsicomres</optsicomres-url>
+    <tycho-version>0.12.0</tycho-version>
+    <platform-version-name>helios</platform-version-name>
+    <eclipse-site>http://download.eclipse.org/releases/${platform-version-name}</eclipse-site>
+  </properties>
+  
+  <repositories>
+    <repository>
+      <id>helios</id>
+      <layout>p2</layout>
+      <url>${eclipse-site}</url>
+    </repository>
+  </repositories>
+  
+<!--   <pluginRepositories> -->
+<!--     <pluginRepository> -->
+<!--       <id>sonatype.snapshots</id> -->
+<!--       <url>http://build.sidelab.es:8080/nexus/content/repositories/sonatype-snapshots/</url> -->
+<!--     </pluginRepository> -->
+<!--   </pluginRepositories> -->
+  
+  <scm>
+  	<connection>scm:svn:https://code.sidelab.es/svn/optsicomres/res/trunk</connection>
+  	<url>https://code.sidelab.es/svn/optsicomres/res</url>
+  </scm>
+  
+  <distributionManagement>
+        <!-- use the following if you're not using a snapshot version. -->
+        <repository>
+                <id>releases</id>
+                <name>Sidelab Releases</name>
+                <url>http://build.sidelab.es:8080/archiva/repository/releases/</url>
+        </repository>
+        <!-- use the following if you ARE using a snapshot version. -->
+        <snapshotRepository>
+                <id>snapshots</id>
+                <name>Sidelab Snapshots</name>
+                <url>http://build.sidelab.es:8080/archiva/repository/snapshots/</url>
+        </snapshotRepository>
+  </distributionManagement>
+  
+  <build>
+  	<plugins>
+  		<plugin>
+  			<groupId>org.eclipse.tycho</groupId>
+  			<artifactId>tycho-maven-plugin</artifactId>
+  			<version>${tycho-version}</version>
+  			<extensions>true</extensions>
+  		</plugin>
+  		<plugin>
+  			<groupId>org.eclipse.tycho</groupId>
+  			<artifactId>target-platform-configuration</artifactId>
+  			<version>${tycho-version}</version>
+			<configuration>
+              <resolver>p2</resolver>
+        	</configuration>
+   		</plugin>
+   		<plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.1</version>
+   		</plugin>
+      </plugins>
+  	<pluginManagement>
+  		<plugins>
+             <plugin> 
+                 <groupId>org.apache.maven.plugins</groupId> 
+                 <artifactId>maven-compiler-plugin</artifactId> 
+                 <configuration> 
+                     <source>1.6</source> 
+                     <target>1.6</target> 
+                    <encoding>UTF-8</encoding>
+                 </configuration> 
+             </plugin> 
+  			<plugin>
+  				<groupId>org.eclipse.tycho</groupId>
+  				<artifactId>tycho-compiler-plugin</artifactId>
+  				<version>${tycho-version}</version>
+  			</plugin>
+  			<plugin>
+  				<groupId>org.apache.maven.plugins</groupId>
+  				<artifactId>maven-resources-plugin</artifactId>
+  				<version>2.5</version>
+            </plugin>
+  			<plugin>
+  				<groupId>org.apache.maven.plugins</groupId>
+  				<artifactId>maven-antrun-plugin</artifactId>
+  				<version>1.6</version>
+  			</plugin>
+  			<plugin>
+  				<groupId>org.eclipse.tycho</groupId>
+  				<artifactId>tycho-p2-repository-plugin</artifactId>
+  				<version>${tycho-version}</version>
+  				<configuration>
+          			<includeAllDependencies>false</includeAllDependencies>
+	  				<createArtifactRepository>true</createArtifactRepository>
+        		</configuration>
+  			</plugin>
+  			<plugin>
+  				<groupId>org.eclipse.tycho</groupId>
+  				<artifactId>tycho-p2-director-plugin</artifactId>
+  				<version>${tycho-version}</version>
+  			</plugin>
+  			<plugin>
+  				<groupId>org.eclipse.tycho</groupId>
+  				<artifactId>tycho-packaging-plugin</artifactId>
+  				<version>${tycho-version}</version>
+  				<configuration>
+					<strictVersions>false</strictVersions>
+				</configuration>
+  			</plugin>
+	        <plugin>
+          		<groupId>org.apache.maven.plugins</groupId>
+	  			<artifactId>maven-jar-plugin</artifactId>
+          		<version>2.3</version>
+          		<configuration>
+            		<archive>
+              			<manifestEntries>
+                			<Implementation-Title>Optsicom ${project.artifactId}</Implementation-Title>
+                			<Implementation-Version>${project.version}</Implementation-Version>
+                			<Implementation-Vendor>Sidelab.es - Optsicom RES</Implementation-Vendor>
+                			<Implementation-Vendor-Id>es.optsicom.res</Implementation-Vendor-Id>
+                			<Implementation-Vendor-URL>${optsicomres-url}</Implementation-Vendor-URL>
+              			</manifestEntries>
+            		</archive>
+          		</configuration>
+        	</plugin>
+  		</plugins>
+  	</pluginManagement>
+  </build>
+  
+  <profiles>
+    <profile>
+      <id>platform-helios</id>
+      <activation>
+        <property>
+          <name>platform-version-name</name>
+          <value>helios</value>
+        </property>
+      </activation>
+      <properties>
+        <eclipse-site>http://download.eclipse.org/releases/helios</eclipse-site>
+        <platform-version>[3.6,3.7)</platform-version>
+        <swtbot-site>http://download.eclipse.org/technology/swtbot/helios/dev-build/update-site</swtbot-site>
+      </properties>
+    </profile>
+    <profile>
+      <id>platform-indigo</id>
+      <activation>
+        <property>
+          <name>platform-version-name</name>
+          <value>indigo</value>
+        </property>
+      </activation>
+      <properties>
+        <eclipse-site>http://download.eclipse.org/releases/indigo</eclipse-site>
+        <platform-version>[3.7,3.8)</platform-version>
+        <swtbot-site>http://download.eclipse.org/technology/swtbot/indigo/dev-build/update-site</swtbot-site>
+      </properties>
+    </profile>
+  </profiles>
+</project>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature url="features/es.optsicom.res.feature_1.1.0.qualifier.jar" id="es.optsicom.res.feature" version="1.1.0.qualifier">
+      <category name="es.optsicom.res"/>
+   </feature>
+   <category-def name="es.optsicom.res" label="Optsicom Remote Experiment System"/>
+</site>

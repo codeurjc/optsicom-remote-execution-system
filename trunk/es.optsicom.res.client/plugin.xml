@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+ <extension point="org.eclipse.debug.ui.launchShortcuts">
+    <shortcut
+          class="es.optsicom.res.client.launcher.local.LocalVersionedJavaShortcut"
+          icon="icons/icon-optsicom-16x16.png"
+          id="es.optsicom.res.client.launcher.local.shortcut"
+          label="Local Java Versioned Application"
+          modes="run,debug">
+          <contextualLaunch>
+           <enablement>
+             <with variable="selection">
+               <count value="1"/>
+                <iterate>
+                 <and>
+                  <adapt type="org.eclipse.jdt.core.IJavaElement">
+                  	<test
+                         forcePluginActivation="true"
+                         property="org.eclipse.jdt.core.isInJavaProject"/>
+                  </adapt>
+               	  <or>
+               	    <test
+                          forcePluginActivation="true"
+                          property="org.eclipse.jdt.launching.hasMain"/>
+               	    <test property="org.eclipse.jdt.launching.isContainer"/>
+               	    <test property="org.eclipse.jdt.launching.isPackageFragment"/>
+               	    <test property="org.eclipse.jdt.launching.isPackageFragmentRoot"/>
+               	  </or>
+                 </and>
+                </iterate>
+               </with>
+           </enablement>
+  		 </contextualLaunch>
+    </shortcut>
+    <shortcut
+          class="es.optsicom.res.client.launcher.remote.RemoteVersionedJavaShortcut"
+          icon="icons/icon-optsicom-16x16.png"
+          id="es.optsicom.res.client.launcher.remote.shortcut"
+          label="Remote Java Versioned Application"
+          modes="run,debug">
+       <contextualLaunch>
+          <enablement>
+             <with
+                   variable="selection">
+                <count
+                      value="1">
+                </count>
+                <iterate>
+                   <and>
+                      <adapt
+                            type="org.eclipse.jdt.core.IJavaElement">
+                         <test
+                               forcePluginActivation="true"
+                               property="org.eclipse.jdt.core.isInJavaProject">
+                         </test>
+                      </adapt>
+                      <or>
+                         <test
+                               forcePluginActivation="true"
+                               property="org.eclipse.jdt.launching.hasMain">
+                         </test>
+                         <test
+                               property="org.eclipse.jdt.launching.isContainer">
+                         </test>
+                         <test
+                               property="org.eclipse.jdt.launching.isPackageFragment">
+                         </test>
+                         <test
+                               property="org.eclipse.jdt.launching.isPackageFragmentRoot">
+                         </test>
+                      </or>
+                   </and>
+                </iterate>
+             </with>
+          </enablement>
+       </contextualLaunch>
+    </shortcut>
+ </extension>
+
+ <extension
+       point="org.eclipse.debug.core.launchConfigurationTypes">
+    <launchConfigurationType
+          delegate="org.eclipse.jdt.launching.JavaLaunchDelegate"
+          id="es.optsicom.res.client.launcher.local.launchConfigurationType"
+          migrationDelegate="org.eclipse.jdt.internal.launching.JavaMigrationDelegate"
+          modes="run,debug"
+          name="Local Java Versioned Application"
+          public="true"
+          sourceLocatorId="org.eclipse.jdt.launching.sourceLocator.JavaSourceLookupDirector"
+          sourcePathComputerId="org.eclipse.jdt.launching.sourceLookup.javaSourcePathComputer">
+    </launchConfigurationType>
+    <launchConfigurationType
+          delegate="es.optsicom.res.client.launcher.remote.delegate.RemoteVersionedLaunchConfigurationDelegate"
+          id="es.optsicom.res.client.launcher.remote.launchConfigurationType"
+          migrationDelegate="org.eclipse.jdt.internal.launching.JavaMigrationDelegate"
+          modes="run,debug"
+          name="Remote Java Versioned Application"
+          public="true"
+          sourceLocatorId="org.eclipse.jdt.launching.sourceLocator.JavaSourceLookupDirector"
+          sourcePathComputerId="org.eclipse.jdt.launching.sourceLookup.javaSourcePathComputer">
+    </launchConfigurationType>
+ </extension>
+ <extension
+       point="org.eclipse.debug.ui.launchConfigurationTabGroups">
+    <launchConfigurationTabGroup
+          class="org.eclipse.jdt.internal.debug.ui.launcher.LocalJavaApplicationTabGroup"
+          helpContextId="org.eclipse.jdt.debug.ui.launchConfigHelpContext.local_java_application"
+          id="Local Java Versioned Tab Group"
+          type="es.optsicom.res.client.launcher.local.launchConfigurationType">
+       <launchMode
+             description="Run a Java Versioned Aplication"
+             mode="run">
+       </launchMode>
+       <launchMode
+             description="Debug a Java Versioned Aplication"
+             mode="debug"
+             perspective="org.eclipse.debug.ui.DebugPerspective">
+       </launchMode>
+    </launchConfigurationTabGroup>
+    <launchConfigurationTabGroup
+          class="es.optsicom.res.client.launcher.remote.tabs.RemoteTabs"
+          id="Remote Java Versioned Tab Group"
+          type="es.optsicom.res.client.launcher.remote.launchConfigurationType">
+       <launchMode
+             description="Run a Remote Java Versioned Aplication"
+             mode="run">
+       </launchMode>
+       <launchMode
+             description="Debug a Remote Java Versioned Aplication"
+             mode="debug"
+             perspective="org.eclipse.debug.ui.DebugPerspective">
+       </launchMode>
+    </launchConfigurationTabGroup>
+ </extension>
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ <extension
+       point="org.eclipse.debug.ui.launchConfigurationTypeImages">
+    <launchConfigurationTypeImage
+          configTypeID="es.optsicom.res.client.launcher.local.launchConfigurationType"
+          icon="icons/icon-optsicom-16x16.png"
+          id="Local Java Versioned Type Image">
+    </launchConfigurationTypeImage>
+    <launchConfigurationTypeImage
+          configTypeID="es.optsicom.res.client.launcher.remote.launchConfigurationType"
+          icon="icons/icon-optsicom-16x16.png"
+          id="Remote Java Versioned Type Image">
+    </launchConfigurationTypeImage>
+ </extension>
+ <extension
+       point="org.eclipse.ui.views">
+    <category
+          id="es.optsicom.res.client.views.OptsicomCategory"
+          name="Optsicom RES">
+    </category>
+    <view
+          category="es.optsicom.res.client.views.OptsicomCategory"
+          class="es.optsicom.res.client.views.OptsicomView"
+          icon="icons/icon-optsicom-16x16.png"
+          id="es.optsicom.res.client.views.OptsicomView"
+          name="Optsicom RES">
+    </view>
+ </extension>
+ <extension
+       point="org.eclipse.ui.perspectiveExtensions">
+    <perspectiveExtension
+          targetID="org.eclipse.jdt.ui.JavaPerspective">
+       <view
+             id="es.optsicom.res.client.views.OptsicomView"
+             ratio="0.5"
+             relationship="right"
+             relative="org.eclipse.ui.views.TaskList">
+       </view>
+    </perspectiveExtension>
+ </extension>
+ <extension
+       point="org.eclipse.help.contexts">
+    <contexts
+          file="contexts.xml">
+    </contexts>
+ </extension>
+ <extension
+       point="org.eclipse.ui.preferencePages">
+    <page
+          class="es.optsicom.res.client.preferences.OptsicomPreferencePage"
+          id="es.optsicom.res.client.preferences.preferencepage"
+          name="Optsicom Res">
+    </page>
+ </extension>
+ <extension
+       id="id1"
+       point="org.eclipse.equinox.security.secureStorage">
+    <provider
+          class="client.PasswordProvider:1"
+          priority="client.provider1">
+    </provider>
+ </extension>
+
+
+</plugin>
