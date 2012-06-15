@@ -6,6 +6,6 @@
 		<relativePath>../es.optsicom.res.res-parent</relativePath>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
-  <artifactId>feature</artifactId>
+  <artifactId>es.optsicom.res.feature</artifactId>
   <packaging>eclipse-feature</packaging>
 </project>
