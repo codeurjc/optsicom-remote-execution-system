@@ -69,6 +69,7 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 	private boolean salir = false;
 	
 	private List selectedResources;
+	private List selectedResourcesString;
 	
 	// Metodos para la configuracion del Shortcut
 	protected ILaunchConfigurationType getConfigurationType() {
@@ -167,7 +168,18 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_RMI, portRmi);
 			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PASSWORD, password);
 			
-			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_SELECTED_RESOURCES, selectedResources);
+			//wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_SELECTED_RESOURCES, selectedResources);
+			if(!selectedResources.isEmpty()){
+				int index = 0;
+				selectedResourcesString = new ArrayList();
+				IResource resource;
+				while(index<selectedResources.size()){
+					resource = (IResource) selectedResources.get(index);
+					selectedResourcesString.add(resource.getFullPath().toString());
+					index++;
+				}
+			}
+			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_SELECTED_RESOURCES, selectedResourcesString);
 			
 			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_DEBUG_CONFIGURATION, false);
 			

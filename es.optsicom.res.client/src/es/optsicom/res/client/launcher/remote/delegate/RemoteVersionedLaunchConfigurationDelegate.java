@@ -1,10 +1,14 @@
 package es.optsicom.res.client.launcher.remote.delegate;
 
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -33,6 +37,7 @@ public class RemoteVersionedLaunchConfigurationDelegate extends AbstractJavaLaun
 	private String[] programArgs;
 	@SuppressWarnings("rawtypes")
 	private List userSelectedResources;
+	private List selectedResourcesString;
 	private IJavaProject project;
 	protected static final Map<String,String> EMPTY_MAP = new HashMap<String,String>();
 	
@@ -68,8 +73,18 @@ public class RemoteVersionedLaunchConfigurationDelegate extends AbstractJavaLaun
 					programArgs = getArguments(getProgramArguments(configuration));
 				}
 	
-				userSelectedResources = configuration.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_SELECTED_RESOURCES,	userSelectedResources);
-	
+				selectedResourcesString = configuration.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_SELECTED_RESOURCES,	selectedResourcesString);
+				
+				if(selectedResourcesString.size()>0){
+					int index = 0;
+					userSelectedResources = new ArrayList();
+					while(index<selectedResourcesString.size()){
+						IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(selectedResourcesString.get(index).toString());
+						userSelectedResources.add(index, resource);
+						index++;
+					}
+				}
+				
 				monitor.subTask("Launch remote versioned configuration");
 				
 				RemoteVersionedLaunchConfiguration remoteLaunch = new RemoteVersionedLaunchConfiguration();
@@ -136,8 +151,18 @@ public class RemoteVersionedLaunchConfigurationDelegate extends AbstractJavaLaun
 				programArgs = getArguments(getProgramArguments(configuration));
 			}
 
-			userSelectedResources = configuration.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_SELECTED_RESOURCES,	userSelectedResources);
-
+			selectedResourcesString = configuration.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_SELECTED_RESOURCES, selectedResourcesString);
+			
+			if(selectedResourcesString.size()>0){
+				int index = 0;
+				userSelectedResources = new ArrayList();
+				while(index<selectedResourcesString.size()){
+					IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(selectedResourcesString.get(index).toString());
+					userSelectedResources.add(index, resource);
+					index++;
+				}
+			}
+			
 			monitor.subTask("Launch remote versioned configuration");
 			
 			RemoteVersionedLaunchConfiguration remoteLaunch = new RemoteVersionedLaunchConfiguration();
