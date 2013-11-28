@@ -1,8 +1,0 @@
-Manifest-Version: 1.0
-Bundle-ManifestVersion: 2
-Bundle-Name: Server
-Bundle-SymbolicName: es.optsicom.res.server
-Bundle-Version: 1.0.4.qualifier
-Export-Package: es.optsicom.res.server
-Bundle-Vendor: Optsicom
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
