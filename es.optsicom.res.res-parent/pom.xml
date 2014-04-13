@@ -12,25 +12,18 @@
   
   <name>Optsicom Remote Experiment System - Parent</name>
   <url>${optsicomres-url}</url>
-  
   <description>Launching experiments remotely from the IDE.</description>
   
+  
   <issueManagement>
-  	<url>http://code.sidelab.es/projects/optsicomres/issues</url>
-  	<system>Redmine</system>
+  	<url>https://github.com/sidelab-urjc/optsicom-remote-execution-system/issues</url>
+  	<system>Github</system>
   </issueManagement>
   
   <licenses>
   	<license>
   		<name>Eclipse Public License v1.0</name>
   		<url>http://www.eclipse.org/legal/epl-v10.htm</url>
-  		<comments>
-  			Copyright (c) Sidelab and Optsicom Teams. 
-			This program and the accompanying materials are made available
-			under the terms of the Eclipse Public License v1.0 which
-			accompanies this distribution and is available at
-			http://www.eclipse.org/legal/epl-v10.htm
-		</comments>
   	</license>
   </licenses>
   
@@ -41,12 +34,13 @@
   </modules>
   
   <properties>
-  	<optsicomres-url>http://code.sidelab.es/projects/optsicomres</optsicomres-url>
+  	<optsicomres-url>https://github.com/sidelab-urjc/optsicom-remote-execution-system</optsicomres-url>
+	<java.version>1.6</java.version>
+	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>  
   </properties>
   
   <scm>
-  	<connection>scm:svn:https://code.sidelab.es/svn/optsicomres/res/trunk</connection>
-  	<url>https://code.sidelab.es/svn/optsicomres/res</url>
+  	<url>https://github.com/sidelab-urjc/optsicom-remote-execution-system.git</url>
   </scm>
   
 <!--   <distributionManagement> -->
