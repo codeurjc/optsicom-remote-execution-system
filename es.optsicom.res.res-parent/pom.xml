@@ -1,109 +1,137 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  
-  <prerequisites>
-    <maven>3.0</maven>
-  </prerequisites>
-  
-  <groupId>es.optsicom.res</groupId>
-  <artifactId>res-parent</artifactId>
-  <version>1.2.0-SNAPSHOT</version>
-  <packaging>pom</packaging>
-  
-  <name>Optsicom Remote Experiment System - Parent</name>
-  <url>${optsicomres-url}</url>
-  <description>Launching experiments remotely from the IDE.</description>
-  
-  
-  <issueManagement>
-  	<url>https://github.com/sidelab-urjc/optsicom-remote-execution-system/issues</url>
-  	<system>Github</system>
-  </issueManagement>
-  
-  <licenses>
-  	<license>
-  		<name>Eclipse Public License v1.0</name>
-  		<url>http://www.eclipse.org/legal/epl-v10.htm</url>
-  	</license>
-  </licenses>
-  
-  
-  <modules>
-  	<module>../es.optsicom.res.server.impl</module>
-  	<module>../es.optsicom.res.eclipse.parent</module>
-  </modules>
-  
-  <properties>
-  	<optsicomres-url>https://github.com/sidelab-urjc/optsicom-remote-execution-system</optsicomres-url>
-	<java.version>1.6</java.version>
-	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>  
-  </properties>
-  
-  <scm>
-  	<url>https://github.com/sidelab-urjc/optsicom-remote-execution-system.git</url>
-  </scm>
-  
-<!--   <distributionManagement> -->
-<!--         use the following if you're not using a snapshot version. -->
-<!--         <repository> -->
-<!--                 <id>releases</id> -->
-<!--                 <name>Sidelab Releases</name> -->
-<!--                 <url>http://build.sidelab.es:8080/archiva/repository/releases/</url> -->
-<!--         </repository> -->
-<!--         use the following if you ARE using a snapshot version. -->
-<!--         <snapshotRepository> -->
-<!--                 <id>snapshots</id> -->
-<!--                 <name>Sidelab Snapshots</name> -->
-<!--                 <url>http://build.sidelab.es:8080/archiva/repository/snapshots/</url> -->
-<!--         </snapshotRepository> -->
-<!--   </distributionManagement> -->
-  
-  <build>
-  	<plugins>
-   		<plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-release-plugin</artifactId>
-          <version>2.1</version>
-   		</plugin>
-      </plugins>
-  	<pluginManagement>
-  		<plugins>
-             <plugin> 
-                 <groupId>org.apache.maven.plugins</groupId> 
-                 <artifactId>maven-compiler-plugin</artifactId> 
-                 <configuration> 
-                     <source>1.6</source> 
-                     <target>1.6</target> 
-                    <encoding>UTF-8</encoding>
-                 </configuration> 
-             </plugin> 
-  			<plugin>
-  				<groupId>org.apache.maven.plugins</groupId>
-  				<artifactId>maven-resources-plugin</artifactId>
-  				<version>2.5</version>
-            </plugin>
-  			<plugin>
-  				<groupId>org.apache.maven.plugins</groupId>
-  				<artifactId>maven-antrun-plugin</artifactId>
-  				<version>1.6</version>
-  			</plugin>
-	        <plugin>
-          		<groupId>org.apache.maven.plugins</groupId>
-	  			    <artifactId>maven-jar-plugin</artifactId>
-          		<version>2.3</version>
-          		<configuration>
-            		<archive>
-              			<manifestEntries>
-                			<Implementation-Title>Optsicom ${project.artifactId}</Implementation-Title>
-                			<Implementation-Version>${project.version}</Implementation-Version>
-                			<Implementation-Vendor>Sidelab.es - Optsicom RES</Implementation-Vendor>
-                			<Implementation-Vendor-Id>es.optsicom.res</Implementation-Vendor-Id>
-                			<Implementation-Vendor-URL>${optsicomres-url}</Implementation-Vendor-URL>
-              			</manifestEntries>
-            		</archive>
-          		</configuration>
-        	</plugin>
-  		</plugins>
-  	</pluginManagement>
-  </build>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<prerequisites>
+		<maven>3.0</maven>
+	</prerequisites>
+
+	<groupId>es.optsicom.res</groupId>
+	<artifactId>res-parent</artifactId>
+	<version>1.2.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<name>Optsicom Remote Experiment System - Parent</name>
+	<url>${optsicomres-url}</url>
+	<description>Launching experiments remotely from the IDE.</description>
+
+
+	<issueManagement>
+		<url>https://github.com/sidelab-urjc/optsicom-remote-execution-system/issues</url>
+		<system>Github</system>
+	</issueManagement>
+
+	<licenses>
+		<license>
+			<name>Eclipse Public License v1.0</name>
+			<url>http://www.eclipse.org/legal/epl-v10.htm</url>
+		</license>
+	</licenses>
+
+
+	<modules>
+		<module>../es.optsicom.res.server.impl</module>
+		<module>../es.optsicom.res.eclipse.parent</module>
+	</modules>
+
+	<properties>
+		<optsicomres-url>https://github.com/sidelab-urjc/optsicom-remote-execution-system</optsicomres-url>
+		<java.version>1.6</java.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<developers>
+		<developer>
+			<name>Francisco Gortázar</name>
+			<email>patxi.gortazar@gmail.com</email>
+			<organization>Optsicom</organization>
+			<organizationUrl>http://www.optsicom.es</organizationUrl>
+		</developer>
+	</developers>
+
+	<scm>
+		<connection>scm:git:git@github.com:sidelab-urjc/optsicom-remote-execution-system.git</connection>
+		<developerConnection>scm:git:git@github.com:sidelab-urjc/optsicom-remote-execution-system.git</developerConnection>
+		<url>https://github.com/sidelab-urjc/optsicom-remote-execution-system.git</url>
+	</scm>
+
+	<distributionManagement>
+		<snapshotRepository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+		</snapshotRepository>
+		<repository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+		</repository>
+	</distributionManagement>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>2.1</version>
+			</plugin>
+		</plugins>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-gpg-plugin</artifactId>
+					<version>1.5</version>
+					<configuration>
+						<mavenExecutorId>forked-path</mavenExecutorId>
+						<useReleaseProfile>false</useReleaseProfile>
+						<arguments>${arguments} -Psonatype-oss-release</arguments>
+					</configuration>
+					<executions>
+						<execution>
+							<id>sign-artifacts</id>
+							<phase>verify</phase>
+							<goals>
+								<goal>sign</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.1</version>
+					<configuration>
+						<source>1.6</source>
+						<target>1.6</target>
+						<encoding>UTF-8</encoding>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>2.5</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-antrun-plugin</artifactId>
+					<version>1.6</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>2.3</version>
+					<configuration>
+						<archive>
+							<manifestEntries>
+								<Implementation-Title>Optsicom ${project.artifactId}</Implementation-Title>
+								<Implementation-Version>${project.version}</Implementation-Version>
+								<Implementation-Vendor>Optsicom.es - Optsicom RES</Implementation-Vendor>
+								<Implementation-Vendor-Id>es.optsicom.res</Implementation-Vendor-Id>
+								<Implementation-Vendor-URL>${optsicomres-url}</Implementation-Vendor-URL>
+							</manifestEntries>
+						</archive>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
 </project>
