@@ -1,6 +1,8 @@
 optsicom-remote-execution-system
 ================================
 
+[![Build Status](https://travis-ci.org/sidelab-urjc/optsicom-remote-execution-system.png)](https://travis-ci.org/sidelab-urjc/optsicom-remote-execution-system)
+
 Executes Java programs remotely directly from Eclipse IDE
 
 Optsicom RES stands for Optsicom Remote Experiment System. It is a system that allows to execute aplications from Eclipse in remote machines. This is very useful in some situations like executing in a virtual machine, in a cluster, etc.
