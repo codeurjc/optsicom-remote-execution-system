@@ -13,7 +13,7 @@
 	</parent>
 
 	<properties>
-	    <tycho-version>0.12.0</tycho-version>
+	    <tycho-version>0.20.0</tycho-version>
     	<platform-version-name>kepler</platform-version-name>
     	<eclipse-site>http://download.eclipse.org/releases/${platform-version-name}</eclipse-site>
 	</properties>

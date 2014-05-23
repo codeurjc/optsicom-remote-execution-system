@@ -11,7 +11,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>es.optsicom.res</groupId>
-			<artifactId>server</artifactId>
+			<artifactId>es.optsicom.res.server</artifactId>
 			<version>1.2.0-SNAPSHOT</version>
 			<scope>compile</scope>
 		</dependency>
