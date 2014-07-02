@@ -244,24 +244,26 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 		}
 		
 		//mgarcia: Optiscom Res evolution
-		final RemoteExecutionJob job = new RemoteExecutionJob();
-		job.setHost(host);
-		job.setPortRMI(portRmi);
-		job.setPortDebug(portDebug);
-		job.setPassword(password);
-		job.setVmArgs(vmargs);
-		job.setProgramArgs(prgargs);
-		job.setMainClass(type.getFullyQualifiedName());
-		job.setMode(mode);
-		job.setUserSelectedResources(selectedResources);
-		job.setProject(type.getJavaProject());
+		final IRemoteExecution rmiExecutor = new RMIRemoteExecution();
+		rmiExecutor.setHost(host);
+		rmiExecutor.setPortRMI(portRmi);
+		rmiExecutor.setPortDebug(portDebug);
+		rmiExecutor.setPassword(password);
+		rmiExecutor.setVmArgs(vmargs);
+		rmiExecutor.setProgramArgs(prgargs);
+		rmiExecutor.setMainClass(type.getFullyQualifiedName());
+		rmiExecutor.setMode(mode);
+		rmiExecutor.setUserSelectedResources(selectedResources);
+		rmiExecutor.setProject(type.getJavaProject());
 		
+		final RemoteExecutionJob job = new RemoteExecutionJob();
+		job.setRemoteExecution(rmiExecutor);
 		job.addJobChangeListener(new JobChangeAdapter(){
 			@Override
 			public void done(IJobChangeEvent event) {
 				final IStatus status = event.getResult();
 				if(status.isOK()) {
-					ILaunchConfiguration config = createConfiguration(type, mode, job.getZipName());
+					ILaunchConfiguration config = createConfiguration(type, mode, job.getRemoteExecution().getZipName());
 					if (config != null && "debug".equals(mode)){
 						DebugUITools.launch(config, mode);
 					}
