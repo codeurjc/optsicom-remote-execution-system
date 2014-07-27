@@ -29,5 +29,6 @@ public interface IRemoteExecution {
 	void setUserSelectedResources(List userSelectedResources);
 	void setProject(IJavaProject project);
 	void setPortDebug(String portDebug);
+	String getName();
 	String getZipName();
 }

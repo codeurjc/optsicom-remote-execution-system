@@ -35,10 +35,13 @@ public class RemoteVersionedLaunchConfigurationDelegate extends AbstractJavaLaun
 	private String mainClass;
 	private String[] vmArgs;
 	private String[] programArgs;
+	private String connectionType;
 	@SuppressWarnings("rawtypes")
 	private List userSelectedResources;
 	private List selectedResourcesString;
 	private IJavaProject project;
+
+	
 	protected static final Map<String,String> EMPTY_MAP = new HashMap<String,String>();
 	
 	
@@ -60,6 +63,7 @@ public class RemoteVersionedLaunchConfigurationDelegate extends AbstractJavaLaun
 			     			
 				host = configuration.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_REMOTE_SERVER,EMPTY_STRING);
 				portRmi = configuration.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_RMI,EMPTY_STRING);
+				connectionType = configuration.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_CONNECTION_TYPE,EMPTY_STRING);
 				password = configuration.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PASSWORD,EMPTY_STRING);
 				portDebug = configuration.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_DEBUG,EMPTY_STRING);
 								
@@ -88,7 +92,7 @@ public class RemoteVersionedLaunchConfigurationDelegate extends AbstractJavaLaun
 				monitor.subTask("Launch remote versioned configuration");
 				
 				RemoteVersionedLaunchConfiguration remoteLaunch = new RemoteVersionedLaunchConfiguration();
-				remoteLaunch.launch(configuration, mode, launch, monitor, host, portRmi, portDebug, password, mainClass, vmArgs, programArgs, userSelectedResources, project);
+				remoteLaunch.launch(configuration, mode, launch, monitor, host, portRmi, portDebug, connectionType,password, mainClass, vmArgs, programArgs, userSelectedResources, project);
 				
 				if (monitor.isCanceled()) {
 					RESClientPlugin.log("Remote versioned launch configuration canceled");
@@ -140,6 +144,7 @@ public class RemoteVersionedLaunchConfigurationDelegate extends AbstractJavaLaun
 			host = configuration.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_REMOTE_SERVER,EMPTY_STRING);
 			portRmi = configuration.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_RMI,EMPTY_STRING);
 			password = configuration.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PASSWORD,EMPTY_STRING);
+			connectionType = configuration.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_CONNECTION_TYPE,EMPTY_STRING);
 						
 			mainClass = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME,EMPTY_STRING);
 			project = getJavaProject(configuration);
@@ -166,7 +171,7 @@ public class RemoteVersionedLaunchConfigurationDelegate extends AbstractJavaLaun
 			monitor.subTask("Launch remote versioned configuration");
 			
 			RemoteVersionedLaunchConfiguration remoteLaunch = new RemoteVersionedLaunchConfiguration();
-			remoteLaunch.launch(configuration, mode, launch, monitor, host, portRmi, portDebug, password, mainClass, vmArgs, programArgs, userSelectedResources, project);
+			remoteLaunch.launch(configuration, mode, launch, monitor, host, portRmi, portDebug,connectionType, password, mainClass, vmArgs, programArgs, userSelectedResources, project);
 			
 			if (monitor.isCanceled()) {
 				RESClientPlugin.log("Remote versioned launch configuration canceled");

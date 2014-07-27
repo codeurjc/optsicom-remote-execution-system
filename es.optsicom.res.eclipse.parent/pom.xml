@@ -107,5 +107,6 @@
   	<module>../es.optsicom.res.client.p2</module>
   	<module>../es.optsicom.res.feature</module>
   	<module>../es.optsicom.res.server</module>
+  	<module>../es.optsicom.res.rmi</module>
   </modules>
 </project>

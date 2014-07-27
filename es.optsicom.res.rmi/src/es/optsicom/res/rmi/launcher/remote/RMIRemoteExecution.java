@@ -1,8 +1,7 @@
-package es.optsicom.res.client.launcher.remote;
+package es.optsicom.res.rmi.launcher.remote;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -30,6 +29,7 @@ import org.eclipse.ui.preferences.ScopedPreferenceStore;
 
 import es.optsicom.res.client.RESClientPlugin;
 import es.optsicom.res.client.ZipFileCreation;
+import es.optsicom.res.client.launcher.remote.IRemoteExecution;
 import es.optsicom.res.client.util.DependenciesResolverException;
 import es.optsicom.res.client.util.ProjectDependenciesResolver;
 import es.optsicom.res.server.OptsicomRemoteExecutor;
@@ -37,6 +37,7 @@ import es.optsicom.res.server.OptsicomRemoteServer;
 import es.optsicom.res.server.PaqueteDatos;
 
 public class RMIRemoteExecution implements IRemoteExecution {
+private String name="RMI";
 	
 	private String host;
 	private String portRMI;
@@ -438,5 +439,10 @@ final File f = new File(zipName);
 
 	public IJavaProject getProject() {
 		return project;
+	}
+
+	@Override
+	public String getName() {
+		return name;
 	}
 }

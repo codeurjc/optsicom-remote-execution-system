@@ -17,13 +17,23 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IConfigurationElement;
+import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.eclipse.e4.core.di.annotations.Execute;
+
+import es.optsicom.res.client.launcher.remote.IRemoteExecution;
 
 /**
  * The activator class controls the plug-in life cycle
@@ -35,7 +45,7 @@ public class RESClientPlugin extends AbstractUIPlugin {
 
 	// The shared instance
 	private static RESClientPlugin plugin;
-	
+	private static BundleContext bundleContext;
 	/**
 	 * The constructor
 	 */
@@ -49,11 +59,10 @@ public class RESClientPlugin extends AbstractUIPlugin {
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
 		plugin = this;
-		
+		this.bundleContext=context;
 		//this.getStateLocation()
 		//Ruta del fichero
-		
-		
+		//this.execute(Platform.getExtensionRegistry());
 
 		//Guardamos el fichero
 		String ruta = this.getStateLocation().toOSString() + File.separator+ "clientTruststore";
@@ -74,7 +83,7 @@ public class RESClientPlugin extends AbstractUIPlugin {
 		fos.close();
 
 	}
-
+	
 	/*
 	 * (non-Javadoc)
 	 * @see org.eclipse.ui.plugin.AbstractUIPlugin#stop(org.osgi.framework.BundleContext)
@@ -119,5 +128,8 @@ public class RESClientPlugin extends AbstractUIPlugin {
 	public static void log(Exception e) {
 		getDefault().getLog().log(new Status(IStatus.ERROR, PLUGIN_ID, e.getMessage(), e));
 	}
-
+	
+	public static BundleContext getBundlecontext(){
+		return bundleContext;
+	}
 }

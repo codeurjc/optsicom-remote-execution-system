@@ -18,6 +18,8 @@ public interface IJavaRemoteServerConfigurationConstants extends IJavaLaunchConf
 	public static final String ATTR_SELECTED_RESOURCES = LaunchingPlugin.getUniqueIdentifier() + ".selectedResources"; 
 	
 	public static final String ATTR_DEBUG_CONFIGURATION = LaunchingPlugin.getUniqueIdentifier() + ".debugConfiguration"; 
-	
+
+	public static final String ATTR_CONNECTION_TYPE = LaunchingPlugin.getUniqueIdentifier() + ".connectionType"; 
+
 
 }

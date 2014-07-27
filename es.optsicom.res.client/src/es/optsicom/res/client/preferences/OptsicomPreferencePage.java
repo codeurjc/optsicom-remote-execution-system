@@ -25,9 +25,11 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
+import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
 
+import es.optsicom.res.client.EvaluateContributionsHandler;
 import es.optsicom.res.client.RESClientPlugin;
 
 
@@ -43,6 +45,7 @@ public class OptsicomPreferencePage
 	private Combo savedConnections;
 	private HashMap<String,String> connections;
 	private ISecurePreferences root;
+	private Combo connectionType;
 	
 	public void init(IWorkbench workbench) {
 		setDescription("Configuration server");
@@ -62,6 +65,27 @@ public class OptsicomPreferencePage
 		gd.horizontalAlignment = SWT.FILL;
 		gd.grabExcessHorizontalSpace = true;
 		savedConnections.setLayoutData(gd);
+		
+		
+		Label connectionLabel = new Label(contents, SWT.LEFT);
+		connectionLabel.setText("Choose a connection:");
+		connectionType = new Combo(contents, SWT.BORDER | SWT.READ_ONLY);
+		gd = new GridData();
+		gd.horizontalAlignment = SWT.FILL;
+		gd.grabExcessHorizontalSpace = true;
+		connectionType.setLayoutData(gd);
+		
+		String [] connectionTypeList=null;
+		EvaluateContributionsHandler pluginHandler= new EvaluateContributionsHandler();
+		try {
+			connectionTypeList=pluginHandler.getPluginNameList();
+		} catch (InvalidSyntaxException e3) {
+			// TODO Auto-generated catch block
+			e3.printStackTrace();
+		}
+		
+		
+		connectionType.setItems(connectionTypeList);
 		
 		Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
 		Preferences savedServers = prefs.node(SERVERS);
@@ -176,7 +200,7 @@ public class OptsicomPreferencePage
 		int itemSelected = savedConnections.getSelectionIndex();
 		if(itemSelected >= 0){
 			String configName = savedConnections.getItem(itemSelected);
-			String parameters = txtPass.getText() + ":" + txtHost.getText() + ":" + txtPortRmi.getText();
+			String parameters = txtHost.getText() + ":" + txtPortRmi.getText() + ":" + connectionType.getItem(connectionType.getSelectionIndex());
 			connections.put(configName, parameters);
 		}
 		
@@ -187,7 +211,7 @@ public class OptsicomPreferencePage
 		int itemSelected = savedConnections.getSelectionIndex();
 		if(itemSelected >= 0){
 			String configName = savedConnections.getItem(itemSelected);
-			String parameters = txtPass.getText() + ":" + txtHost.getText() + ":" + txtPortRmi.getText();
+			String parameters = txtHost.getText() + ":" + txtPortRmi.getText() + ":" + connectionType.getItem(connectionType.getSelectionIndex());
 			connections.put(configName, parameters);
 		}
 		
@@ -247,6 +271,8 @@ public class OptsicomPreferencePage
 			StringTokenizer st = new StringTokenizer(parameters, ":");
 			txtHost.setText(st.nextToken());
 			txtPortRmi.setText(st.nextToken());
+			String connectionTypeName= st.nextToken();			
+			connectionType.select(connectionType.indexOf(connectionTypeName));
 			if (root != null) {
 				if (root.nodeExists(OPTSICOM)) {
 					ISecurePreferences node = root.node(OPTSICOM);

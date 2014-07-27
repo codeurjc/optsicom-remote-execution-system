@@ -16,9 +16,10 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.osgi.framework.InvalidSyntaxException;
 
+import es.optsicom.res.client.EvaluateContributionsHandler;
 import es.optsicom.res.client.launcher.remote.IRemoteExecution;
-import es.optsicom.res.client.launcher.remote.RMIRemoteExecution;
 import es.optsicom.res.client.launcher.remote.RemoteExecutionJob;
 
 public class RemoteVersionedLaunchConfiguration {
@@ -29,22 +30,32 @@ public class RemoteVersionedLaunchConfiguration {
 	
 	@SuppressWarnings("rawtypes")
 	public void launch(final ILaunchConfiguration configuration, final String mode, final ILaunch launch, final IProgressMonitor monitor,String host, String portRmi,
-					String portDebug, String password, String mainClass, String[] vmArgs, String[] programArgs, List userSelectedResources, IJavaProject project) throws CoreException {
+					String portDebug, String connectionType, String password, String mainClass, String[] vmArgs, String[] programArgs, List userSelectedResources, IJavaProject project) throws CoreException {
 
-			final IRemoteExecution rmiExecutor = new RMIRemoteExecution();
-			rmiExecutor.setHost(host);
-			rmiExecutor.setPortRMI(portRmi);
-			rmiExecutor.setPortRMI(portDebug);
-			rmiExecutor.setPassword(password);
-			rmiExecutor.setVmArgs(vmArgs);
-			rmiExecutor.setProgramArgs(programArgs);
-			rmiExecutor.setMainClass(mainClass);
-			rmiExecutor.setMode(mode);
-			rmiExecutor.setUserSelectedResources(userSelectedResources);
-			rmiExecutor.setProject(project);
+			IRemoteExecution executor= null;
+		
+			EvaluateContributionsHandler pluginHandler = new EvaluateContributionsHandler();
 			
+			try {
+				executor=pluginHandler.getPlugin(connectionType);
+			} catch (InvalidSyntaxException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		
+			executor.setHost(host);
+			executor.setPortRMI(portRmi);
+			executor.setPortRMI(portDebug);
+			executor.setPassword(password);
+			executor.setVmArgs(vmArgs);
+			executor.setProgramArgs(programArgs);
+			executor.setMainClass(mainClass);
+			executor.setMode(mode);
+			executor.setUserSelectedResources(userSelectedResources);
+			executor.setProject(project);
+				
 			RemoteExecutionJob job= new RemoteExecutionJob();
-			job.setRemoteExecution(rmiExecutor);
+			job.setRemoteExecution(executor);
 			job.addJobChangeListener(new JobChangeAdapter() {
 				@Override
 				public void done(IJobChangeEvent event) {
@@ -63,7 +74,9 @@ public class RemoteVersionedLaunchConfiguration {
 					}
 				}
 			});
-			job.schedule();			
+			job.schedule();	
+		
+				
 	}
 	
 }

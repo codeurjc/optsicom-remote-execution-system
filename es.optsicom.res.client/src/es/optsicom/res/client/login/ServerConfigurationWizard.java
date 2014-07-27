@@ -42,6 +42,7 @@ public class ServerConfigurationWizard extends Wizard {
 	@Override
 	public boolean performFinish() {
 		// Poner los valores en rvjs
+		rvjs.setConnectionType(configurationPage.getConnectionType());
 		rvjs.setPassword(configurationPage.getPasswd());
 		rvjs.setHost(configurationPage.getHost());
 		rvjs.setPortRmi(configurationPage.getPortRMI());
