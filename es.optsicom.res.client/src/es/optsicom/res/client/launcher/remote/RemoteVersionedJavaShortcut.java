@@ -47,7 +47,9 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.PlatformUI;
+import org.osgi.framework.InvalidSyntaxException;
 
+import es.optsicom.res.client.EvaluateContributionsHandler;
 import es.optsicom.res.client.RESClientPlugin;
 import es.optsicom.res.client.launcher.remote.delegate.IJavaRemoteServerConfigurationConstants;
 import es.optsicom.res.client.login.ServerConfigurationWizard;
@@ -65,6 +67,7 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 	private String portDebug = null;
 	private String[] vmargs = null;
 	private String[] prgargs = null;
+	private String connectionType=null;
 	
 	private boolean salir = false;
 	
@@ -167,7 +170,7 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_REMOTE_SERVER, host);
 			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_RMI, portRmi);
 			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PASSWORD, password);
-			
+			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_CONNECTION_TYPE, connectionType);
 			//wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_SELECTED_RESOURCES, selectedResources);
 			if(!selectedResources.isEmpty()){
 				int index = 0;
@@ -243,25 +246,36 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 			return;
 		}
 		
-		//mgarcia: Optiscom Res evolution
-		final RemoteExecutionJob job = new RemoteExecutionJob();
-		job.setHost(host);
-		job.setPortRMI(portRmi);
-		job.setPortDebug(portDebug);
-		job.setPassword(password);
-		job.setVmArgs(vmargs);
-		job.setProgramArgs(prgargs);
-		job.setMainClass(type.getFullyQualifiedName());
-		job.setMode(mode);
-		job.setUserSelectedResources(selectedResources);
-		job.setProject(type.getJavaProject());
+		IRemoteExecution executor= null;
 		
+		EvaluateContributionsHandler pluginHandler = new EvaluateContributionsHandler();
+		
+		try {
+			executor=pluginHandler.getPlugin(connectionType);
+		} catch (InvalidSyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		//mgarcia: Optiscom Res evolution
+		executor.setHost(host);
+		executor.setPortRMI(portRmi);
+		executor.setPortDebug(portDebug);
+		executor.setPassword(password);
+		executor.setVmArgs(vmargs);
+		executor.setProgramArgs(prgargs);
+		executor.setMainClass(type.getFullyQualifiedName());
+		executor.setMode(mode);
+		executor.setUserSelectedResources(selectedResources);
+		executor.setProject(type.getJavaProject());
+		
+		final RemoteExecutionJob job = new RemoteExecutionJob();
+		job.setRemoteExecution(executor);
 		job.addJobChangeListener(new JobChangeAdapter(){
 			@Override
 			public void done(IJobChangeEvent event) {
 				final IStatus status = event.getResult();
 				if(status.isOK()) {
-					ILaunchConfiguration config = createConfiguration(type, mode, job.getZipName());
+					ILaunchConfiguration config = createConfiguration(type, mode, job.getRemoteExecution().getZipName());
 					if (config != null && "debug".equals(mode)){
 						DebugUITools.launch(config, mode);
 					}
@@ -276,6 +290,9 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 			}
 		});
 		job.schedule();
+		
+		
+		
 						
 	}
 	
@@ -306,6 +323,10 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 	//Metodos setters utilizados por la interfaz grafica
 	public void setPassword(String password) {
 		this.password = password;
+	}
+	
+	public void setConnectionType(String connectionType) {
+		this.connectionType = connectionType;
 	}
 
 	public void setSalir(boolean salir) {

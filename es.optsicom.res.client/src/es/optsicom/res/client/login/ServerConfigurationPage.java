@@ -36,9 +36,11 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
 
+import es.optsicom.res.client.EvaluateContributionsHandler;
 import es.optsicom.res.client.RESClientPlugin;
 import es.optsicom.res.server.OptsicomRemoteExecutor;
 import es.optsicom.res.server.OptsicomRemoteServer;
@@ -55,6 +57,7 @@ public class ServerConfigurationPage extends WizardPage {
 	private Text txtVMarg;
 	private Text txtPrgarg;
 	private String mode;
+	private Combo connectionType;
 	private boolean connectionValid = false;
 	//mgarcia: Optiscom Res evolution 
 	private ISecurePreferences root;
@@ -84,6 +87,27 @@ public class ServerConfigurationPage extends WizardPage {
 		gd.grabExcessHorizontalSpace = true;
 		savedConnections.setLayoutData(gd);
 		
+		Label connectionLabel = new Label(contents, SWT.LEFT);
+		connectionLabel.setText("Choose a connection:");
+		connectionType = new Combo(contents, SWT.BORDER | SWT.READ_ONLY);
+		gd = new GridData();
+		gd.horizontalAlignment = SWT.FILL;
+		gd.grabExcessHorizontalSpace = true;
+		connectionType.setLayoutData(gd);
+		
+		String [] connectionTypeList=null;
+		EvaluateContributionsHandler pluginHandler= new EvaluateContributionsHandler();
+		try {
+			connectionTypeList=pluginHandler.getPluginNameList();
+		} catch (InvalidSyntaxException e3) {
+			// TODO Auto-generated catch block
+			e3.printStackTrace();
+		}
+		
+		
+		connectionType.setItems(connectionTypeList);
+		
+		
 		Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
 		Preferences savedServers = prefs.node(SERVERS);
 		String[] serverNames = new String[0];
@@ -108,6 +132,8 @@ public class ServerConfigurationPage extends WizardPage {
 				StringTokenizer st = new StringTokenizer(parameters, ":");
 				txtHost.setText(st.nextToken());
 				txtPortRmi.setText(st.nextToken());
+				String connectionTypeName= st.nextToken();			
+				connectionType.select(connectionType.indexOf(connectionTypeName));
 				//mgarcia: Optsicom res Evolution
 				if (root != null) {
 					if (root.nodeExists(OPTSICOM)) {
@@ -198,7 +224,7 @@ public class ServerConfigurationPage extends WizardPage {
 				int result = input.open();
 				if(result == InputDialog.OK) {
 					String configName = input.getValue();
-					String parameters = txtHost.getText() + ":" + txtPortRmi.getText();
+					String parameters = txtHost.getText() + ":" + txtPortRmi.getText() + ":" + connectionType.getItem(connectionType.getSelectionIndex());
 					Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
 					Preferences savedServers = prefs.node(SERVERS);
 					savedServers.put(configName, parameters);
@@ -236,7 +262,7 @@ public class ServerConfigurationPage extends WizardPage {
 		gridDataHV = new GridData();
 		gridDataHV.horizontalSpan = 1;
 		gridDataHV.horizontalAlignment = GridData.FILL;
-		gridDataHV.grabExcessHorizontalSpace = true;	 
+		gridDataHV.grabExcessHorizontalSpace = true;	 		
 		txtPass.setLayoutData(gridDataHV);
 		
 		Label lblHost = new Label(datosConexion, SWT.LEFT);
@@ -293,6 +319,10 @@ public class ServerConfigurationPage extends WizardPage {
 
 	public String getPasswd() {
 		return txtPass.getText();
+	}
+	
+	public String getConnectionType() {
+		return connectionType.getItem(connectionType.getSelectionIndex());
 	}
 
 	public String getHost() {

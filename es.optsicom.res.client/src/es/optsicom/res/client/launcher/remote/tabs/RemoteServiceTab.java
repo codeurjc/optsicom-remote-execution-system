@@ -14,11 +14,14 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.osgi.framework.InvalidSyntaxException;
 
+import es.optsicom.res.client.EvaluateContributionsHandler;
 import es.optsicom.res.client.RESClientPlugin;
 import es.optsicom.res.client.launcher.remote.delegate.IJavaRemoteServerConfigurationConstants;
 
@@ -31,6 +34,7 @@ public class RemoteServiceTab extends AbstractLaunchConfigurationTab {
 	private Text txtPortRmi;
 	private Text txtPortDebug;
 	private String mode;
+	private Combo connectionType;
 	
 	protected static final String EMPTY_STRING = "";
 	protected static final Map<String,String> EMPTY_MAP = new HashMap<String,String>();
@@ -70,6 +74,8 @@ public class RemoteServiceTab extends AbstractLaunchConfigurationTab {
 		datosPersonales.setLayout(gly);
 		datosPersonales.setSize(200, 200);
 		
+	
+		
 		Label lblPassword = new Label(datosPersonales, SWT.LEFT);
 		lblPassword.setText("Password:");
 		txtPassword = new Text(datosPersonales, SWT.BORDER | SWT.PASSWORD);
@@ -97,6 +103,24 @@ public class RemoteServiceTab extends AbstractLaunchConfigurationTab {
 		gly.numColumns = 2;
 		datosConexion.setLayout(gly);
 		datosConexion.setSize(200, 200);
+		
+		Label connectionLabel = new Label(datosConexion, SWT.LEFT);
+		connectionLabel.setText("Choose a connection:");
+		connectionType = new Combo(datosConexion, SWT.BORDER | SWT.READ_ONLY);
+		gridDataHV = new GridData();
+		gridDataHV.horizontalAlignment = SWT.FILL;
+		gridDataHV.grabExcessHorizontalSpace = true;
+		connectionType.setLayoutData(gridDataHV);
+		
+		String [] connectionTypeList=null;
+		EvaluateContributionsHandler pluginHandler= new EvaluateContributionsHandler();
+		try {
+			connectionTypeList=pluginHandler.getPluginNameList();
+		} catch (InvalidSyntaxException e3) {
+			// TODO Auto-generated catch block
+			e3.printStackTrace();
+		}	
+		connectionType.setItems(connectionTypeList);
 		
 		Label lblHost = new Label(datosConexion, SWT.LEFT);
 		lblHost.setText("Host:");
@@ -152,6 +176,7 @@ public class RemoteServiceTab extends AbstractLaunchConfigurationTab {
         configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_REMOTE_SERVER, EMPTY_STRING);
         configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_RMI, EMPTY_STRING);
         configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PASSWORD, EMPTY_STRING);
+        configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_CONNECTION_TYPE, EMPTY_STRING);
         if (mode.equals("debug")){
         	configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_DEBUG, EMPTY_STRING);
         	configuration.setAttribute(IJavaLaunchConfigurationConstants.ATTR_CONNECT_MAP, attrMap);
@@ -168,6 +193,8 @@ public class RemoteServiceTab extends AbstractLaunchConfigurationTab {
     		txtHost.setText(config.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_REMOTE_SERVER, EMPTY_STRING));
     		txtPortRmi.setText(config.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_RMI, EMPTY_STRING));
     		txtPassword.setText(config.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PASSWORD, EMPTY_STRING));
+    		String connectionTypeName= config.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_CONNECTION_TYPE, EMPTY_STRING);			
+			connectionType.select(connectionType.indexOf(connectionTypeName));
     		if (mode.equals("debug")){
     			txtPortDebug.setText(config.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_DEBUG, EMPTY_STRING));
     			ILaunchConfigurationWorkingCopy configuration = config.getWorkingCopy();
@@ -185,6 +212,7 @@ public class RemoteServiceTab extends AbstractLaunchConfigurationTab {
 	  	configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_REMOTE_SERVER, txtHost.getText().trim());
 		configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_RMI, txtPortRmi.getText().trim());
 		configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PASSWORD, txtPassword.getText().trim());
+		configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_CONNECTION_TYPE, connectionType.getItem(connectionType.getSelectionIndex()).trim());
 		if (mode.equals("debug")){
 			try {
 				configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_DEBUG, txtPortDebug.getText().trim());
