@@ -19,8 +19,9 @@ public interface IRemoteExecution {
 	void openConsole(final OptsicomRemoteExecutor executor,final String idjob);
 	void getResultingFile(final OptsicomRemoteExecutor executor,final String idjob);
 	void getZipResultingFile(OptsicomRemoteExecutor executor,String idjob);
-	void setPortRMI(String portRmi);
+	void setPort(String port);
 	void setHost(String host);
+	void setUser(String user);
 	void setMainClass(String mainClass);
 	void setPassword(String password);
 	void setProgramArgs(String[] programArgs);

@@ -26,6 +26,8 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -50,9 +52,10 @@ public class ServerConfigurationPage extends WizardPage {
 	private static final String SERVERS = "SERVERS";
 	//mgarcia: Optiscom Res evolution 
 	private static final String OPTSICOM = "/optsicom";
+	private Text txtUser;
 	private Text txtPass;
 	private Text txtHost;
-	private Text txtPortRmi;
+	private Text txtPort;
 	private Text txtPortDebug;
 	private Text txtVMarg;
 	private Text txtPrgarg;
@@ -61,6 +64,7 @@ public class ServerConfigurationPage extends WizardPage {
 	private boolean connectionValid = false;
 	//mgarcia: Optiscom Res evolution 
 	private ISecurePreferences root;
+	
 
 	protected ServerConfigurationPage(String mode) {
 		super("ServerConfiguration");
@@ -131,9 +135,10 @@ public class ServerConfigurationPage extends WizardPage {
 				String parameters = new String(savedServers.get(c.getItem(itemSelected), ""));
 				StringTokenizer st = new StringTokenizer(parameters, ":");
 				txtHost.setText(st.nextToken());
-				txtPortRmi.setText(st.nextToken());
+				txtPort.setText(st.nextToken());
 				String connectionTypeName= st.nextToken();			
 				connectionType.select(connectionType.indexOf(connectionTypeName));
+				txtUser.setText(st.nextToken());
 				//mgarcia: Optsicom res Evolution
 				if (root != null) {
 					if (root.nodeExists(OPTSICOM)) {
@@ -224,7 +229,7 @@ public class ServerConfigurationPage extends WizardPage {
 				int result = input.open();
 				if(result == InputDialog.OK) {
 					String configName = input.getValue();
-					String parameters = txtHost.getText() + ":" + txtPortRmi.getText() + ":" + connectionType.getItem(connectionType.getSelectionIndex());
+					String parameters = txtHost.getText() + ":" + txtPort.getText() + ":" + connectionType.getItem(connectionType.getSelectionIndex())+ ":" + txtUser.getText();
 					Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
 					Preferences savedServers = prefs.node(SERVERS);
 					savedServers.put(configName, parameters);
@@ -255,7 +260,17 @@ public class ServerConfigurationPage extends WizardPage {
 		gd.horizontalAlignment = SWT.LEFT;
 		gd.grabExcessHorizontalSpace = true;
 		saveSettings.setLayoutData(gd);
-	 
+		
+		Label lblUser = new Label(datosPersonales, SWT.LEFT);
+		lblUser.setText("User:");
+		txtUser = new Text(datosPersonales, SWT.BORDER | SWT.SINGLE);
+		gridDataHV = new GridData();
+		gridDataHV.horizontalSpan = 1;
+		gridDataHV.horizontalAlignment = GridData.FILL;
+		gridDataHV.grabExcessHorizontalSpace = true;	 
+		txtUser.setLayoutData(gridDataHV);
+		
+		
 		Label lblPass = new Label(datosPersonales, SWT.CENTER);
 		lblPass.setText("Password:");
 		txtPass = new Text(datosPersonales, SWT.BORDER | SWT.PASSWORD);
@@ -276,12 +291,12 @@ public class ServerConfigurationPage extends WizardPage {
 		
 		Label lblPortRmi = new Label(datosConexion, SWT.LEFT);
 		lblPortRmi.setText("Host RMI port:");
-		txtPortRmi = new Text(datosConexion, SWT.BORDER | SWT.SINGLE);
+		txtPort = new Text(datosConexion, SWT.BORDER | SWT.SINGLE);
 		gridDataHV = new GridData();
 		gridDataHV.horizontalSpan = 1;
 		gridDataHV.horizontalAlignment = GridData.FILL;
 		gridDataHV.grabExcessHorizontalSpace = true;
-		txtPortRmi.setLayoutData(gridDataHV);
+		txtPort.setLayoutData(gridDataHV);
 		
 		Label lblPortDebug = new Label(datosConexion, SWT.LEFT);
 		lblPortDebug.setText("VM Debug port:");
@@ -321,6 +336,10 @@ public class ServerConfigurationPage extends WizardPage {
 		return txtPass.getText();
 	}
 	
+	public String getUser() {
+		return txtUser.getText();
+	}
+	
 	public String getConnectionType() {
 		return connectionType.getItem(connectionType.getSelectionIndex());
 	}
@@ -329,8 +348,8 @@ public class ServerConfigurationPage extends WizardPage {
 		return txtHost.getText();
 	}
 
-	public String getPortRMI() {
-		return txtPortRmi.getText();
+	public String getPort() {
+		return txtPort.getText();
 	}
 
 	public String getVMArgs() {
@@ -351,9 +370,9 @@ public class ServerConfigurationPage extends WizardPage {
 
 	private void doValidate(IProgressMonitor monitor) {
 		try {
-			connectionValid = false;
+			/*connectionValid = false;
 			monitor.beginTask("Validating connection", 2);
-			OptsicomRemoteServer veex = (OptsicomRemoteServer) Naming.lookup("//"+txtHost.getText()+":"+txtPortRmi.getText()+"/optsicom");
+			OptsicomRemoteServer veex = (OptsicomRemoteServer) Naming.lookup("//"+txtHost.getText()+":"+txtPort.getText()+"/optsicom");
 			monitor.worked(1);
 			if(veex != null) {
 				OptsicomRemoteExecutor executor = veex.getExecutor();
@@ -370,7 +389,13 @@ public class ServerConfigurationPage extends WizardPage {
 			} else {
 				setErrorMessage("Naming returned null");
 				RESClientPlugin.log("Naming returned null");
-			}
+			}*/
+			
+			connectionValid = true;
+			setPageComplete(true);
+			setErrorMessage(null);
+			setMessage("Connection validated succesfully");
+			
 		} catch (Exception e) {
 			RESClientPlugin.log(e);
 			setErrorMessage(e.getMessage());

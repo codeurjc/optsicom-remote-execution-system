@@ -30,7 +30,7 @@ public class RemoteVersionedLaunchConfiguration {
 	
 	@SuppressWarnings("rawtypes")
 	public void launch(final ILaunchConfiguration configuration, final String mode, final ILaunch launch, final IProgressMonitor monitor,String host, String portRmi,
-					String portDebug, String connectionType, String password, String mainClass, String[] vmArgs, String[] programArgs, List userSelectedResources, IJavaProject project) throws CoreException {
+					String portDebug, String connectionType, String user, String password, String mainClass, String[] vmArgs, String[] programArgs, List userSelectedResources, IJavaProject project) throws CoreException {
 
 			IRemoteExecution executor= null;
 		
@@ -44,8 +44,9 @@ public class RemoteVersionedLaunchConfiguration {
 			}
 		
 			executor.setHost(host);
-			executor.setPortRMI(portRmi);
-			executor.setPortRMI(portDebug);
+			executor.setPort(portRmi);
+			executor.setPort(portDebug);
+			executor.setUser(user);
 			executor.setPassword(password);
 			executor.setVmArgs(vmArgs);
 			executor.setProgramArgs(programArgs);

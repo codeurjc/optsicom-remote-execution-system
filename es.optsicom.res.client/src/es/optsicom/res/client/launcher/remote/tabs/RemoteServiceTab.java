@@ -31,6 +31,7 @@ public class RemoteServiceTab extends AbstractLaunchConfigurationTab {
 
 	private Text txtPassword;
 	private Text txtHost;
+	private Text txtUser;
 	private Text txtPortRmi;
 	private Text txtPortDebug;
 	private String mode;
@@ -74,7 +75,19 @@ public class RemoteServiceTab extends AbstractLaunchConfigurationTab {
 		datosPersonales.setLayout(gly);
 		datosPersonales.setSize(200, 200);
 		
-	
+		Label lblUser = new Label(datosPersonales, SWT.LEFT);
+		lblUser.setText("User:");
+		txtUser = new Text(datosPersonales, SWT.BORDER | SWT.SINGLE);
+		gridDataHV = new GridData();
+		gridDataHV.horizontalSpan = 1;
+		gridDataHV.horizontalAlignment = GridData.FILL;
+		gridDataHV.grabExcessHorizontalSpace = true;	 
+		txtUser.setLayoutData(gridDataHV);
+		txtUser.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				updateLaunchConfigurationDialog();
+			}
+		});
 		
 		Label lblPassword = new Label(datosPersonales, SWT.LEFT);
 		lblPassword.setText("Password:");
@@ -173,8 +186,9 @@ public class RemoteServiceTab extends AbstractLaunchConfigurationTab {
 	
 	public void setDefaults(ILaunchConfigurationWorkingCopy configuration) {
 		Map<String,String> attrMap = new HashMap<String,String>();
+		configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_USER, EMPTY_STRING);
         configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_REMOTE_SERVER, EMPTY_STRING);
-        configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_RMI, EMPTY_STRING);
+        configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT, EMPTY_STRING);
         configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PASSWORD, EMPTY_STRING);
         configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_CONNECTION_TYPE, EMPTY_STRING);
         if (mode.equals("debug")){
@@ -190,8 +204,9 @@ public class RemoteServiceTab extends AbstractLaunchConfigurationTab {
 
     protected void updateRemoteServiceConfig(ILaunchConfiguration config) {
     	try {
+    		txtUser.setText(config.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_USER, EMPTY_STRING));
     		txtHost.setText(config.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_REMOTE_SERVER, EMPTY_STRING));
-    		txtPortRmi.setText(config.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_RMI, EMPTY_STRING));
+    		txtPortRmi.setText(config.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT, EMPTY_STRING));
     		txtPassword.setText(config.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PASSWORD, EMPTY_STRING));
     		String connectionTypeName= config.getAttribute(IJavaRemoteServerConfigurationConstants.ATTR_CONNECTION_TYPE, EMPTY_STRING);			
 			connectionType.select(connectionType.indexOf(connectionTypeName));
@@ -209,8 +224,9 @@ public class RemoteServiceTab extends AbstractLaunchConfigurationTab {
 
    @SuppressWarnings("unchecked")
    public void performApply(ILaunchConfigurationWorkingCopy configuration) {
+	   configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_USER, txtUser.getText().trim());
 	  	configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_REMOTE_SERVER, txtHost.getText().trim());
-		configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_RMI, txtPortRmi.getText().trim());
+		configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT, txtPortRmi.getText().trim());
 		configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PASSWORD, txtPassword.getText().trim());
 		configuration.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_CONNECTION_TYPE, connectionType.getItem(connectionType.getSelectionIndex()).trim());
 		if (mode.equals("debug")){

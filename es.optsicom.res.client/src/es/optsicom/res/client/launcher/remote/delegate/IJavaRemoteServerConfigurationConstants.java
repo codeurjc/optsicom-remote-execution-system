@@ -9,7 +9,7 @@ public interface IJavaRemoteServerConfigurationConstants extends IJavaLaunchConf
 	
 	public static final String ATTR_REMOTE_SERVER = LaunchingPlugin.getUniqueIdentifier() + ".remoteServer";
 	
-	public static final String ATTR_PORT_RMI = LaunchingPlugin.getUniqueIdentifier() + ".portRmi";
+	public static final String ATTR_PORT = LaunchingPlugin.getUniqueIdentifier() + ".port";
 	
 	public static final String ATTR_PASSWORD = LaunchingPlugin.getUniqueIdentifier() + ".password";
 	
@@ -20,6 +20,8 @@ public interface IJavaRemoteServerConfigurationConstants extends IJavaLaunchConf
 	public static final String ATTR_DEBUG_CONFIGURATION = LaunchingPlugin.getUniqueIdentifier() + ".debugConfiguration"; 
 
 	public static final String ATTR_CONNECTION_TYPE = LaunchingPlugin.getUniqueIdentifier() + ".connectionType"; 
+	
+	public static final String ATTR_USER = LaunchingPlugin.getUniqueIdentifier() + ".user"; 
 
 
 }

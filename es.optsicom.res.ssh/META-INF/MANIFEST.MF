@@ -1,20 +1,21 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Rmi
-Bundle-SymbolicName: es.optsicom.res.rmi;singleton:=true
+Bundle-Name: SSH
+Bundle-SymbolicName: es.optsicom.res.ssh;singleton:=true
 Bundle-Version: 1.0.0.qualifier
-Bundle-Activator: es.optsicom.res.rmi.Activator
+Bundle-Activator: es.optsicom.res.ssh.Activator
 Bundle-Vendor: Optsicom
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
- org.eclipse.core.resources,
  org.eclipse.osgi,
+ org.eclipse.core.resources,
  es.optsicom.res.client;bundle-version="1.2.0",
  es.optsicom.res.server;bundle-version="1.0.4"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: com.jcraft.jsch;version="0.1.50",
+ es.optsicom.res.rmi.launcher.remote,
  org.eclipse.jdt.core,
  org.eclipse.ui.console
-Export-Package: es.optsicom.res.rmi,
- es.optsicom.res.rmi.launcher.remote
+Export-Package: es.optsicom.res.ssh,
+ es.optsicom.res.ssh.launcher.remote
 Eclipse-LazyStart: true

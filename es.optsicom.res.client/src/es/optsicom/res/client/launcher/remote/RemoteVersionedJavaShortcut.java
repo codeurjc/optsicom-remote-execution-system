@@ -61,9 +61,10 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 	private final static String REMOTE_JAVA_VERSIONED_ID_APPLICATION= "es.optsicom.res.client.launcher.remote.launchConfigurationType";
 	public static final String RMI_OBJ_REGISTRY_NAME = "RemoteManagerUniqueName";
 	
+	private String user=null;
 	private String password = null;
 	private String host = null;
-	private String portRmi = null;
+	private String port = null;
 	private String portDebug = null;
 	private String[] vmargs = null;
 	private String[] prgargs = null;
@@ -73,6 +74,7 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 	
 	private List selectedResources;
 	private List selectedResourcesString;
+	
 	
 	// Metodos para la configuracion del Shortcut
 	protected ILaunchConfigurationType getConfigurationType() {
@@ -166,9 +168,9 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 			}
 			
 			wc.setAttribute(IJavaLaunchConfigurationConstants.ATTR_CONNECT_MAP, attrMap);
-			
+			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_USER, user);
 			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_REMOTE_SERVER, host);
-			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT_RMI, portRmi);
+			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PORT, port);
 			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_PASSWORD, password);
 			wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_CONNECTION_TYPE, connectionType);
 			//wc.setAttribute(IJavaRemoteServerConfigurationConstants.ATTR_SELECTED_RESOURCES, selectedResources);
@@ -258,7 +260,8 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 		}
 		//mgarcia: Optiscom Res evolution
 		executor.setHost(host);
-		executor.setPortRMI(portRmi);
+		executor.setUser(user);
+		executor.setPort(port);
 		executor.setPortDebug(portDebug);
 		executor.setPassword(password);
 		executor.setVmArgs(vmargs);
@@ -321,6 +324,10 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 	}
 	
 	//Metodos setters utilizados por la interfaz grafica
+	public void setUser(String user) {
+		this.user = user;
+	}
+	
 	public void setPassword(String password) {
 		this.password = password;
 	}
@@ -337,8 +344,8 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 		this.host = host;
 	}
 
-	public void setPortRmi(String port) {
-		this.portRmi = port;
+	public void setPort(String port) {
+		this.port = port;
 	}
 	/*public void setPortServer(String port) {
 		this.portServer = port;

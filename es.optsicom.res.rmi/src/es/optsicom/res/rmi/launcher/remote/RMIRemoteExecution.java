@@ -39,6 +39,7 @@ import es.optsicom.res.server.PaqueteDatos;
 public class RMIRemoteExecution implements IRemoteExecution {
 private String name="RMI";
 	
+	private String user;
 	private String host;
 	private String portRMI;
 	private String portDebug;
@@ -380,10 +381,6 @@ final File f = new File(zipName);
 		this.host = host;
 	}
 
-	public void setPortRMI(String portRMI) {
-		this.portRMI = portRMI;
-	}
-
 	public void setPortDebug(String portDebug) {
 		this.portDebug = portDebug;
 	}
@@ -444,5 +441,17 @@ final File f = new File(zipName);
 	@Override
 	public String getName() {
 		return name;
+	}
+
+	@Override
+	public void setPort(String port) {
+		this.portRMI=port;
+		
+	}
+
+	@Override
+	public void setUser(String user) {
+		this.user=user;
+		
 	}
 }

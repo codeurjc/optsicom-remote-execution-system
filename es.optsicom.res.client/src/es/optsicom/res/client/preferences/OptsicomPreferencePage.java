@@ -46,6 +46,7 @@ public class OptsicomPreferencePage
 	private HashMap<String,String> connections;
 	private ISecurePreferences root;
 	private Combo connectionType;
+	private Text txtUser;
 	
 	public void init(IWorkbench workbench) {
 		setDescription("Configuration server");
@@ -128,6 +129,7 @@ public class OptsicomPreferencePage
 				} else {
 					String parameters = connections.get(c.getItem(itemSelected));
 					StringTokenizer st = new StringTokenizer(parameters, ":");
+					txtUser.setText(st.nextToken());
 					txtPass.setText(st.nextToken());
 					txtHost.setText(st.nextToken());
 					txtPortRmi.setText(st.nextToken());
@@ -146,6 +148,15 @@ public class OptsicomPreferencePage
 		gly.numColumns = 2;
 		datosPersonales.setLayout(gly);
 		datosPersonales.setSize(200, 200);
+		
+		Label lblUser = new Label(datosPersonales, SWT.LEFT);
+		lblUser.setText("User:");
+		txtUser = new Text(datosPersonales, SWT.BORDER | SWT.SINGLE);
+		gridDataHV = new GridData();
+		gridDataHV.horizontalSpan = 1;
+		gridDataHV.horizontalAlignment = GridData.FILL;
+		gridDataHV.grabExcessHorizontalSpace = true;	 
+		txtUser.setLayoutData(gridDataHV);
 		
 		Label lblPass = new Label(datosPersonales, SWT.CENTER);
 		lblPass.setText("Password:");
@@ -200,7 +211,7 @@ public class OptsicomPreferencePage
 		int itemSelected = savedConnections.getSelectionIndex();
 		if(itemSelected >= 0){
 			String configName = savedConnections.getItem(itemSelected);
-			String parameters = txtHost.getText() + ":" + txtPortRmi.getText() + ":" + connectionType.getItem(connectionType.getSelectionIndex());
+			String parameters = txtHost.getText() + ":" + txtPortRmi.getText() + ":" + connectionType.getItem(connectionType.getSelectionIndex())+ ":" + txtUser.getText();
 			connections.put(configName, parameters);
 		}
 		
@@ -211,7 +222,7 @@ public class OptsicomPreferencePage
 		int itemSelected = savedConnections.getSelectionIndex();
 		if(itemSelected >= 0){
 			String configName = savedConnections.getItem(itemSelected);
-			String parameters = txtHost.getText() + ":" + txtPortRmi.getText() + ":" + connectionType.getItem(connectionType.getSelectionIndex());
+			String parameters = txtHost.getText() + ":" + txtPortRmi.getText() + ":" + connectionType.getItem(connectionType.getSelectionIndex())+ ":" + txtUser.getText();
 			connections.put(configName, parameters);
 		}
 		
