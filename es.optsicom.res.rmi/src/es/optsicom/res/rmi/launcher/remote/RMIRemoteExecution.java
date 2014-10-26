@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.List;
 
@@ -59,7 +61,10 @@ private String name="RMI";
 	public RMIRemoteExecution(){
 		
 	}
-	
+	public RMIRemoteExecution(String host, String portRMI){
+		this.host=host;
+		this.portRMI=portRMI;
+	}
 	@Override
 	public void send(String zipName, OptsicomRemoteExecutor executor,
 			SubMonitor monitor) throws IOException {
@@ -452,6 +457,29 @@ final File f = new File(zipName);
 	@Override
 	public void setUser(String user) {
 		this.user=user;
+		
+	}
+
+	@Override
+	public boolean validateExecution() {
+		OptsicomRemoteServer veex;
+		try {
+			veex = (OptsicomRemoteServer) Naming.lookup("//"+this.host+":"+this.portRMI+"/optsicom");
+			if(veex != null) {
+				OptsicomRemoteExecutor executor = veex.getExecutor();
+				if(executor != null) {
+					return true;
+				} else {
+					return false;
+				}
+			} else {
+				return false;
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		} 
 		
 	}
 }

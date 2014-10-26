@@ -44,6 +44,7 @@ import org.osgi.service.prefs.Preferences;
 
 import es.optsicom.res.client.EvaluateContributionsHandler;
 import es.optsicom.res.client.RESClientPlugin;
+import es.optsicom.res.client.launcher.remote.IRemoteExecution;
 import es.optsicom.res.server.OptsicomRemoteExecutor;
 import es.optsicom.res.server.OptsicomRemoteServer;
 
@@ -390,11 +391,26 @@ public class ServerConfigurationPage extends WizardPage {
 				setErrorMessage("Naming returned null");
 				RESClientPlugin.log("Naming returned null");
 			}*/
-			
-			connectionValid = true;
+			EvaluateContributionsHandler pluginHandler= new EvaluateContributionsHandler();
+			IRemoteExecution executor= pluginHandler.getPlugin(this.getConnectionType());
+			executor.setHost(txtHost.getText());
+			executor.setPort(txtPort.getText());
+			executor.setUser(txtUser.getText());
+			executor.setPassword(txtPass.getText());
+			if(executor.validateExecution()) {
+				connectionValid = true;
+				setPageComplete(true);
+				setErrorMessage(null);
+				setMessage("Connection validated succesfully");
+			} 
+			else {
+				setErrorMessage("Optsicom server returned null");
+				RESClientPlugin.log("IRemoteExecution.validateExecution() returned false");
+			}
+			/*connectionValid = true;
 			setPageComplete(true);
 			setErrorMessage(null);
-			setMessage("Connection validated succesfully");
+			setMessage("Connection validated succesfully");*/
 			
 		} catch (Exception e) {
 			RESClientPlugin.log(e);

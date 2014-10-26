@@ -30,6 +30,7 @@ public interface IRemoteExecution {
 	void setUserSelectedResources(List userSelectedResources);
 	void setProject(IJavaProject project);
 	void setPortDebug(String portDebug);
+	boolean validateExecution();
 	String getName();
 	String getZipName();
 }

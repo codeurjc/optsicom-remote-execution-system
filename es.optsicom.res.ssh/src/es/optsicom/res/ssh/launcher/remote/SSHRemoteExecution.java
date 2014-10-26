@@ -360,7 +360,8 @@ public class SSHRemoteExecution implements IRemoteExecution {
 	        try {
 	        	//Si la ejecución a finalizado escribimos en la consola y rompemos bucle, sino, se realiza una espera.
 	            while(true){
-	               if(channelExec.isClosed()){  
+	            	try{Thread.sleep(1000);}catch(Exception ee){}
+		            if(channelExec.isClosed()){  
 		   	           while((linea=reader.readLine())!= null){
 		   					cos.write(linea+"\n");
 		   					cos.flush();
@@ -368,8 +369,8 @@ public class SSHRemoteExecution implements IRemoteExecution {
 			   	        cos.write("\nFinished\n");
 	   					cos.flush();
 	            	   break;
-	               }
-	               try{Thread.sleep(1000);}catch(Exception ee){}
+		            }
+	               
 	            }
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -391,6 +392,12 @@ public class SSHRemoteExecution implements IRemoteExecution {
 			e.printStackTrace();
 
 		}  
+	}
+
+	@Override
+	public boolean validateExecution() {
+		Session session = this.connect();
+		return session!=null;
 	}
 	
 
