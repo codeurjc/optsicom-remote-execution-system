@@ -3,6 +3,7 @@ package es.optsicom.res.ssh.launcher.remote;
 import java.awt.HeadlessException;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,8 +11,15 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+
+
+
+
+
 
 
 
@@ -34,6 +42,7 @@ import org.eclipse.ui.console.IConsole;
 import org.eclipse.ui.console.IConsoleManager;
 import org.eclipse.ui.console.IOConsoleOutputStream;
 import org.eclipse.ui.console.MessageConsole;
+import org.eclipse.ui.preferences.ScopedPreferenceStore;
 
 import com.jcraft.jsch.*;
 
@@ -47,6 +56,7 @@ import es.optsicom.res.ssh.session.UserSessionInfo;
 public class SSHRemoteExecution implements IRemoteExecution {
 	
 	private static final String FOLDERNAME="optsicom-res";
+	private Session session;
 	String name="SSH";
 	private boolean connected;
 	private String host;
@@ -64,20 +74,25 @@ public class SSHRemoteExecution implements IRemoteExecution {
 	private IJavaProject project;
 	private String serverProjectPath;
 	private static final String resultFile="resultFile.txt";
+	private boolean isOutput;
+	public SSHRemoteExecution(){
+		
+	}
+	
 	@Override
 	public IStatus run(IProgressMonitor monitor) {	
 		
 		SubMonitor subMonitor = SubMonitor.convert(monitor);
 		subMonitor.beginTask("Launching", 5);
-		Session session=this.connect();
+		connect();
 		subMonitor.subTask("Connecting to server");
-		if (session!=null){
+		if (this.session!=null){
 			subMonitor.subTask("Creating project folders");
 			String opsticomFolder="/home/"+this.user+"/"+this.FOLDERNAME;
-			this.executeCommand(session, "mkdir "+opsticomFolder);
+			this.executeCommand("mkdir "+opsticomFolder);
 			
 					
-			DateFormat hourFormat = new SimpleDateFormat("HH-mm");
+			DateFormat hourFormat = new SimpleDateFormat("HH-mm-ss");
 			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 			Date date = new Date();
 			
@@ -85,39 +100,49 @@ public class SSHRemoteExecution implements IRemoteExecution {
 					"_"+hourFormat.format(date);
 			
 			this.serverProjectPath=opsticomFolder+"/"+serverProjectFolder;
-			this.executeCommand(session, "mkdir "+serverProjectPath);
+			this.executeCommand("mkdir "+serverProjectPath);
 			
 			//Enviamos el proeycto	
 			subMonitor.subTask("Sending project");
-			this.send(session);
+			send(subMonitor);
 			
-			this.executeCommand(session, "find  -maxdepth 1 -type f  > "+this.serverProjectPath+"/initalDirectories.txt");
+			this.executeCommand("find  -maxdepth 1 -type f  > "+this.serverProjectPath+"/initalDirectories.txt");
 			
 			subMonitor.subTask("Executing project");
 			//Buscamos los archivos java los almacenamos y los compilamos guardando la dirección
 			String expressionGetJavaSource="find "+serverProjectPath+" -name \"*.java\" > "+serverProjectPath+"/javafiles.txt";
-			executeCommand(session, expressionGetJavaSource);
+			executeCommand(expressionGetJavaSource);
 			
 			
 			String expressionCompileJava="javac @"+serverProjectPath+"/javafiles.txt";
-			executeCommand(session, expressionCompileJava);
+			executeCommand(expressionCompileJava);
 			
 			
 			
-			String mainClassPath=getMainClassPath(session, serverProjectPath);
+			String mainClassPath=getMainClassPath(serverProjectPath);
 			
 			mainClassPath=mainClassPath.replaceAll(mainClass+".java", "");
-			executeProject(session, mainClassPath);
 			
-			this.executeCommand(session, "find  -maxdepth 1 -type f  > "+this.serverProjectPath+"/finalDirectories.txt");
-			this.executeCommand(session, "diff "+this.serverProjectPath+"/initalDirectories.txt  "+this.serverProjectPath+"/finalDirectories.txt | grep -v \"^---\" | grep -v \"^[0-9c0-9]\" > "+this.serverProjectPath+"/outputFiles.txt");
-			boolean isOutput=this.sendOutputFiles(session);
-			this.openConsole(session, isOutput);
+			String idjob=dateFormat.format(date)+
+					"_"+hourFormat.format(date);
+			
+			ScopedPreferenceStore sps =  (ScopedPreferenceStore) RESClientPlugin.getDefault().getPreferenceStore();
+			sps.putValue(idjob,host+":"+port);
+			
+			executeProject(mainClassPath);
+			
+			this.executeCommand("find  -maxdepth 1 -type f  > "+this.serverProjectPath+"/finalDirectories.txt");
+			this.executeCommand("diff "+this.serverProjectPath+"/initalDirectories.txt  "+this.serverProjectPath+"/finalDirectories.txt | grep -v \"^---\" | grep -v \"^[0-9c0-9]\" > "+this.serverProjectPath+"/outputFiles.txt");
+			
+			subMonitor.subTask("Geetting output files");
+			this.isOutput=this.sendOutputFiles();
+			subMonitor.subTask("Opening console");
+			this.openConsole(idjob);
 		}
 		else{
 			RESClientPlugin.log("Authentication failed");
 		}
-		session.disconnect();
+		this.session.disconnect();
 		return new Status(IStatus.OK, RESClientPlugin.PLUGIN_ID, "");
 	}
 
@@ -150,20 +175,9 @@ public class SSHRemoteExecution implements IRemoteExecution {
 		this.resolver = dependenciesResolver;
 	}
 
-	@Override
-	public String getZipName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void send(String zipName, OptsicomRemoteExecutor executor,
-			SubMonitor monitor) throws IOException {
 	
-		
-	}
 
-	private void send (Session session){
+	public void send(SubMonitor monitor){
 		IWorkspace ws = ResourcesPlugin.getWorkspace();
 		String workSpaceRoot = ws.getRoot().getLocation().toOSString();
 		StringBuffer executionResultsPath = new StringBuffer();
@@ -172,9 +186,7 @@ public class SSHRemoteExecution implements IRemoteExecution {
 		executionResultsPath.append(this.project.getElementName());
 		
 		String expressionSCP="scp -r "+executionResultsPath+" "+user+"@"+host+": "+serverProjectPath;
-		executeCommand(session, expressionSCP);
-		
-		
+		executeCommand(expressionSCP);
 		//Enviamos los archivos adicionales	(creando las carpetas necesarias)	
 		if(userSelectedResources != null) { 
 			for(Object o : userSelectedResources) {
@@ -186,20 +198,14 @@ public class SSHRemoteExecution implements IRemoteExecution {
 					relativeResourcePath=relativeResourcePath.substring(0, relativeResourcePath.lastIndexOf('/'));
 				}
 				String mkdirRelativePath="mkdir -p "+serverProjectPath+relativeResourcePath;
-				executeCommand(session, mkdirRelativePath);
+				executeCommand(mkdirRelativePath);
 				String expressionSCPresource="scp -r "+absoluteResourcePath+" "+user+"@"+host+": "+serverProjectPath+relativeResourcePath;
-				executeCommand(session, expressionSCPresource);
-				
+				executeCommand(expressionSCPresource);
 			}
 		}
 	}
-	@Override
-	public void openConsole(OptsicomRemoteExecutor executor, String idjob) {
-		
-		
-	}
 	
-	public void openConsole(Session session, boolean isOutput) {
+	public void openConsole(String idjob) {
 		ChannelExec channelExec;
 		try {
 			MessageConsole miconsola;
@@ -208,58 +214,38 @@ public class SSHRemoteExecution implements IRemoteExecution {
 			final IOConsoleOutputStream cos;
 			miconsola = new MessageConsole("Consola Optsicom RES", null);
 			miconsola.activate();
-
 			plugin = ConsolePlugin.getDefault();
 			cm = plugin.getConsoleManager();
 			cm.addConsoles(new IConsole[]{miconsola});
-			
 			cos = miconsola.newOutputStream();
-			channelExec = (ChannelExec)session.openChannel("exec");	
-			InputStream in = channelExec.getInputStream();
-			channelExec.setCommand("cat "+serverProjectPath+"/"+this.resultFile);
-			channelExec.connect();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-			String line; 
-			while(true){
-	               if(channelExec.isClosed()){ 
-	            	   	while((line=reader.readLine())!= null){
-		   					cos.write(line+"\n");
-		   					cos.flush();
-		               	}
-		   	        	cos.write("\nFinished\n");
-	   					cos.flush();
-	   					break;
-	               }
-	               try{Thread.sleep(500);}catch(Exception ee){}
-	            }
-			if (isOutput){
+			IWorkspace ws = ResourcesPlugin.getWorkspace();
+			String workSpaceRoot = ws.getRoot().getLocation().toOSString();
+			StringBuffer executionResultsPath = new StringBuffer();
+			executionResultsPath.append(workSpaceRoot);
+			executionResultsPath.append(File.separator);
+			executionResultsPath.append(this.project.getElementName());
+			File folder = new File(executionResultsPath+"/results");
+			folder.mkdirs();
+			this.executeCommand("scp -r "+user+"@"+host+": "+serverProjectPath+"/"+resultFile+" "+executionResultsPath+"/results");
+			File localResultFile= new File (executionResultsPath+"/results/"+resultFile);
+			FileReader fr= new FileReader(localResultFile);
+			BufferedReader bf= new BufferedReader(fr);
+			String line;
+			while((line=bf.readLine())!=null){
+				cos.write(line+"\n");
+				cos.flush();
+			}
+			cos.write("Finished\n");
+			cos.flush();
+			if (this.isOutput){
 				cos.write("There are some output files in : "+serverProjectPath+" \n");
 					cos.flush();
 			}
 			cos.close();
-			channelExec.disconnect();
-
-		} catch (JSchException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}     
-		
-	}
-
-	@Override
-	public void getResultingFile(OptsicomRemoteExecutor executor, String idjob) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void getZipResultingFile(OptsicomRemoteExecutor executor,
-			String idjob) {
-		// TODO Auto-generated method stub
 		
 	}
 
@@ -311,179 +297,113 @@ public class SSHRemoteExecution implements IRemoteExecution {
 		this.user=user;
 	}
 	
-	private Session connect(){
+	private void connect(){
 		JSch jSSH = new JSch();
-        Session session;
 		try {
-			session = jSSH.getSession(this.user, this.host, this.port);
+			this.session = jSSH.getSession(this.user, this.host, this.port);
 			UserInfo userInfo = new UserSessionInfo(this.password, null);
-	        session.setUserInfo(userInfo);        
-	        session.setPassword(this.password);
-	        session.connect();
-	        return  session;
+	        this.session.setUserInfo(userInfo);        
+	        this.session.setPassword(this.password);
+	        this.session.connect();
 		} catch (JSchException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			return null;
 		}
         
 	}
 	
-	private BufferedReader executeCommand(Session session, String command){
-		ChannelExec channelExec;
-		try {
-			channelExec = (ChannelExec)session.openChannel("exec");
+	private String getMainClassPath(String serverProjectPath){
 			
-			InputStream in = channelExec.getInputStream();
-			channelExec.setCommand(command);
-			channelExec.connect();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-			 while(true){
-	               if(channelExec.isClosed()){  
-	            	   break;
-	               }
-	               try{Thread.sleep(500);}catch(Exception ee){}
-	            }
-			channelExec.disconnect();
-	        return reader;
-		} catch (JSchException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return null;
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return null;
-		}     
-    }
+		String[] shellOutputs=this.executeCommand("grep "+this.mainClass+".java "+serverProjectPath+"/javafiles.txt");		
+		if(shellOutputs!=null){
+			return shellOutputs[0];
+		}
+		return null;
 	
-	private String getMainClassPath(Session session,String serverProjectPath){
-		ChannelExec channelExec;
-		try {
-			channelExec = (ChannelExec)session.openChannel("exec");
-			
-			InputStream in = channelExec.getInputStream();
-			channelExec.setCommand("grep "+this.mainClass+".java "+serverProjectPath+"/javafiles.txt");
-			channelExec.connect();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-			String linea = null;
-			 while(true){
-	               if(channelExec.isClosed()){  
-		   	           while((linea=reader.readLine())!= null){
-		   	        	   break;
-		               };
-	            	   break;
-	               }
-	               try{Thread.sleep(200);}catch(Exception ee){}
-	            }
-			channelExec.disconnect();
-	        return linea;
-		} catch (JSchException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return null;
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return null;
-		}  
 	}
 	
-	private void executeProject(Session session, String mainClassPath){
-		ChannelExec channelExec;
-		try {
-			channelExec = (ChannelExec)session.openChannel("exec");
-			
-			final InputStream in = channelExec.getInputStream();
-			
-			//Pasamos los argumentos a string para ejecutarlos.
-			String args="";
-			for(String arg : this.programArgs) {
-				args+=arg+" ";
-			}
-			channelExec.setCommand( "java -cp "+mainClassPath+" "+mainClass+" "+args);
-			
-			channelExec.connect();
-			
-			//Escribimos la información en un fichero.
-			BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-			String line = null;
-	        try {
-	        	this.executeCommand(session, "touch "+serverProjectPath+"/"+resultFile);
-	        	//Si la ejecución a finalizado escribimos en la consola y rompemos bucle, sino, se realiza una espera.
-	            while(true){
-	            	try{Thread.sleep(1000);}catch(Exception ee){}
-		            if(channelExec.isClosed()){  
-		   	           while((line=reader.readLine())!= null){
-		   					this.executeCommand(session, "echo "+line+" >> "+serverProjectPath+"/"+resultFile);
-		               }
-	            	   break;
-		            }
-	               
-	            }
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-			channelExec.disconnect();
-			
-			
-			
-	       
-		} catch (JSchException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-
-		}  
+	private void executeProject(String mainClassPath){
+		//Pasamos los argumentos a string para ejecutarlos.
+		String args="";
+		for(String arg : this.programArgs) {
+			args+=arg+" ";
+		}
+		this.executeCommand("touch "+serverProjectPath+"/"+resultFile);
+		//Inicializamos el fichero por si contiene algo
+		this.executeCommand("echo  > "+serverProjectPath+"/"+resultFile);
+		String[] outputShell=this.executeCommand("java -cp "+mainClassPath+" "+mainClass+" "+args+ " >> "+serverProjectPath+"/"+resultFile);
 	}
 
-	@Override
-	public boolean validateExecution() {
-		Session session = this.connect();
-		return session!=null;
-	}
-	
-	private boolean sendOutputFiles(Session session){
-		boolean isOutputs=false;
+	private boolean sendOutputFiles(){
+		boolean isOutput=false;
 		IWorkspace ws = ResourcesPlugin.getWorkspace();
 		String workSpaceRoot = ws.getRoot().getLocation().toOSString();
 		StringBuffer executionResultsPath = new StringBuffer();
 		executionResultsPath.append(workSpaceRoot);
 		executionResultsPath.append(File.separator);
 		executionResultsPath.append(this.project.getElementName());
-		String expressionSCPresource="grep \"\" "+this.serverProjectPath+"/outputFiles.txt";
-		ChannelExec channelExec;
-		try {
-			channelExec = (ChannelExec)session.openChannel("exec");
-			
-			final InputStream in = channelExec.getInputStream();
-			channelExec.setCommand(expressionSCPresource);
-			
-			channelExec.connect();
 
-			BufferedReader bf=new BufferedReader(new InputStreamReader(in));
-			String line;
-			try {
-				while ((line=bf.readLine())!=null){
-					isOutputs=true;
-					String path=line.substring(2, line.length());
-					this.executeCommand(session, "scp -r "+user+"@"+host+": "+path+" "+executionResultsPath);
-					this.executeCommand(session, "rm -rf "+path);
-				}
-			}
-			catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		catch (Exception e) {
-			// TODO Auto-generated catch block
-		}
-		return isOutputs;
+		String[] outputShell=this.executeCommand("grep \"\" "+this.serverProjectPath+"/outputFiles.txt");
+		for(int i=0; i<outputShell.length;i++){
+			isOutput=true;
+			String path=outputShell[i].substring(2, outputShell[i].length());
+			this.executeCommand("scp -r "+user+"@"+host+": "+path+" "+executionResultsPath);
+			this.executeCommand("rm -rf "+path);
+		}			
+		return isOutput;
 	}
+
+	private String[] executeCommand(String command){
+		ChannelExec channelExec;
+		String  shellOutput=null;
+		List<String> lines=null;
+		try {
+			channelExec = (ChannelExec)this.session.openChannel("exec");
+			
+			InputStream in = channelExec.getInputStream();
+			channelExec.setCommand(command);
+			channelExec.connect();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+			String line;
+			lines=new ArrayList<String>();
+			shellOutput="";
+			 while(true){
+	               if(channelExec.isClosed()){ 
+	            	   while((line=reader.readLine())!= null){
+		   	        	   lines.add(line);
+	            	   }
+	            	   break;
+	               }
+	               try{Thread.sleep(50);}catch(Exception ee){}
+	            }
+			channelExec.disconnect();
+	        
+		} catch (JSchException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}   
+		return (lines==null)?null:lines.toArray(new String[lines.size()]);
+    }
+	
+	@Override
+	public boolean validateExecution() {
+		this.connect();
+		return this.session!=null;
+	}
+
+	@Override
+	public void getResultingFile(String idjob) {
+		sendOutputFiles();
+	}
+
+	@Override
+	public String getZipName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	
 }

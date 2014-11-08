@@ -14,11 +14,10 @@ import org.eclipse.jdt.core.IJavaProject;
 import es.optsicom.res.server.OptsicomRemoteExecutor;
 
 public interface IRemoteExecution {
-	void send(String zipName, OptsicomRemoteExecutor executor, SubMonitor monitor) throws IOException;
+	void send(SubMonitor monitor) throws IOException;
 	IStatus run(IProgressMonitor monitor);
-	void openConsole(final OptsicomRemoteExecutor executor,final String idjob);
-	void getResultingFile(final OptsicomRemoteExecutor executor,final String idjob);
-	void getZipResultingFile(OptsicomRemoteExecutor executor,String idjob);
+	void openConsole(String idjob);
+	void getResultingFile(String idjob);
 	void setPort(String port);
 	void setHost(String host);
 	void setUser(String user);
