@@ -60,7 +60,7 @@ public class SSHRemoteExecution implements IRemoteExecution {
 	private static final String FOLDERNAME="optsicom-res";
 	private static final String LOGFILE="/log.txt";
 	private Session session;
-	String name="SSH";
+	private String name="SSH";
 	private boolean connected;
 	private String host;
 	private int port;
@@ -267,6 +267,12 @@ public class SSHRemoteExecution implements IRemoteExecution {
 					cos.flush();
 			}
 			cos.close();
+			//Eliminamos los archivos del servidor.
+			executeCommand("rm -rf "+this.serverProjectPath+"/initialDirectories.txt "+
+					serverProjectPath+"/finalDirectories.txt "+
+					serverProjectPath+"/javafiles.txt "+
+					serverProjectPath+"/"+this.project.getElementName());
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -355,7 +361,7 @@ public class SSHRemoteExecution implements IRemoteExecution {
 		}
 		
 		//Inicializamos el fichero por si contiene algo
-		this.executeCommand("echo  > "+serverProjectPath+"/"+resultFile);
+		executeCommand("echo  > "+serverProjectPath+"/"+resultFile);
 		String[] outputShell=this.executeCommand("cd "+serverProjectPath+" && java -cp "+mainClassPath+" "+mainClass+" "+args+ " >> "+serverProjectPath+"/"+resultFile);
 	}
 
@@ -509,6 +515,12 @@ public class SSHRemoteExecution implements IRemoteExecution {
 					cos.flush();
 			}
 			cos.close();
+			
+			//Eliminamos los archivos del servidor.
+			executeCommand("rm -rf "+this.serverProjectPath+"/initialDirectories.txt "+
+					serverProjectPath+"/finalDirectories.txt "+
+					serverProjectPath+"/javafiles.txt "+
+					serverProjectPath+"/"+this.project.getElementName());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
