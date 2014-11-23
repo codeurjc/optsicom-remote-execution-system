@@ -17,6 +17,8 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.rmi.Naming;
 
+import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.jdt.internal.debug.ui.JDIDebugUIPlugin;
@@ -53,9 +55,12 @@ import org.eclipse.ui.console.IOConsoleOutputStream;
 import org.eclipse.ui.console.MessageConsole;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.preferences.ScopedPreferenceStore;
+import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.prefs.BackingStoreException;
 
+import es.optsicom.res.client.EvaluateContributionsHandler;
 import es.optsicom.res.client.RESClientPlugin;
+import es.optsicom.res.client.launcher.remote.IRemoteExecution;
 import es.optsicom.res.server.OptsicomRemoteExecutor;
 import es.optsicom.res.server.OptsicomRemoteServer;
 
@@ -117,36 +122,41 @@ public class OptsicomView extends ViewPart {
 			IEclipsePreferences[] iep = sps.getPreferenceNodes(false);
 			
 			
-			String port= new String();
-			String host= new String();
-			String tokens[] = new String[2];
+			
+			String tokens[] = new String[5];
 			
 
 			tokens = iep[0].get(idjob,"").split(":");
-			host = tokens[0];
-			port = tokens[1];
+			String connectionType = tokens[0];
+			String host = tokens[1];
+			String port = tokens[2];
+			String user = tokens[3];
+			String password = tokens[4];
 			
 			switch (columnIndex) {
 				case 0:
+					return connectionType;
+				case 1:
 					return idjob.toString();
-				case 1: //Host
+				case 2: //Host
 					return host;
-				case 2:
-					return port;
 				case 3:
-					OptsicomRemoteServer veex;
-					OptsicomRemoteExecutor executor;
-					if (!host.isEmpty()){
-						try {
-							veex = (OptsicomRemoteServer) Naming.lookup("//"+host+":"+port +"/optsicom");
-							executor = veex.getExecutor();
-							return executor.getState(idjob);
-						} catch (Exception e) {
-							RESClientPlugin.log(e);
-							return "undetermined";
-						}
+					return port;
+				case 4:
+					IRemoteExecution executor= null;
+					EvaluateContributionsHandler pluginHandler = new EvaluateContributionsHandler();
+					try {
+						executor=pluginHandler.getPlugin(connectionType);
+						executor.setHost(host);
+						executor.setPort(port);
+						executor.setUser(user);
+						executor.setPassword(password);
+						return executor.getState(idjob);
+					} catch (InvalidSyntaxException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+						return "---";
 					}
-					return "undetermined";
 
 			}
 			return "undetermined";
@@ -170,8 +180,16 @@ public class OptsicomView extends ViewPart {
 		viewer = new TableViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
 		
 		TableViewerColumn column = new TableViewerColumn(viewer, SWT.NONE);
-		column.getColumn().setText("Proceso");
-		column.getColumn().setToolTipText("Proceso");
+		column.getColumn().setText("Connection type");
+		column.getColumn().setToolTipText("Connection type");
+		column.getColumn().setWidth(150);
+		column.getColumn().setResizable(true);
+		column.getColumn().setMoveable(true);
+		
+		
+		column = new TableViewerColumn(viewer, SWT.NONE);
+		column.getColumn().setText("Process");
+		column.getColumn().setToolTipText("Process");
 		column.getColumn().setWidth(250);
 		column.getColumn().setResizable(true);
 		column.getColumn().setMoveable(true);
@@ -185,13 +203,13 @@ public class OptsicomView extends ViewPart {
 		
 		column = new TableViewerColumn(viewer, SWT.NONE);
 		column.getColumn().setText("Port");
-		column.getColumn().setWidth(250);
+		column.getColumn().setWidth(100);
 		column.getColumn().setResizable(true);
 		column.getColumn().setMoveable(true);
 		
 		column = new TableViewerColumn(viewer, SWT.NONE);
 		column.getColumn().setText("State");
-		column.getColumn().setWidth(250);
+		column.getColumn().setWidth(200);
 		column.getColumn().setResizable(true);
 		column.getColumn().setMoveable(true);
 
@@ -298,22 +316,32 @@ public class OptsicomView extends ViewPart {
 						for (int i=0;i<keys.length;i++){
 							if (keys[i].equals(obj.toString())){
 								//System.out.println("-->Crea el objeto remoto del server");
-								OptsicomRemoteServer veex;
-								OptsicomRemoteExecutor executor;
-								
-								String port= new String();
-								String host= new String();
-								String tokens[] = new String[2];
+								String tokens[] = new String[5];
 								String idjob = obj.toString();
 
 								tokens = iep[0].get(idjob,"").split(":");
-								host = tokens[0];
-								port = tokens[1];
-								if (!host.isEmpty()){
-									veex = (OptsicomRemoteServer) Naming.lookup("//"+host+":"+port+"/optsicom");
-									executor = veex.getExecutor();
-									getConsole(executor, obj.toString());
+								String connectionType = tokens[0];
+								String host = tokens[1];
+								String port = tokens[2];
+								String user = tokens[3];
+								String password = tokens[4];
+								
+								IRemoteExecution executor= null;
+								EvaluateContributionsHandler pluginHandler = new EvaluateContributionsHandler();
+								try {
+									IWorkspace ws = ResourcesPlugin.getWorkspace();
+									String workSpaceRoot = ws.getRoot().getLocation().toOSString();
+									executor=pluginHandler.getPlugin(connectionType);
+									executor.setHost(host);
+									executor.setPort(port);
+									executor.setUser(user);
+									executor.setPassword(password);
+									executor.getResultFromView(workSpaceRoot, idjob);
+								} catch (InvalidSyntaxException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
 								}
+								
 								break;
 							}
 						}
@@ -353,76 +381,6 @@ public class OptsicomView extends ViewPart {
 		viewer.getControl().setFocus();
 	}
 	
-	public void getConsole(final OptsicomRemoteExecutor executor,final String idjob) {
-		
-		MessageConsole miconsola;
-		ConsolePlugin plugin;
-		IConsoleManager cm;
-		final IOConsoleOutputStream cos;
-		miconsola = new MessageConsole("Consola"+idjob, null);
-		miconsola.activate();
-
-		plugin = ConsolePlugin.getDefault();
-		cm = plugin.getConsoleManager();
-		cm.addConsoles(new IConsole[]{miconsola});
-		
-		cos = miconsola.newOutputStream();
-		
-		
-
-		new Thread(){
-			public void run(){
-				try {
-					String cadena = "";
-					IPath statePath = RESClientPlugin.getDefault().getStateLocation();
-					File cFile = new File(statePath.toFile(), "Clientconsole_"+idjob+".txt");
-					
-					cos.write(cadena);
-					cos.flush();
-
-					
-					int contador = 0;
-					for (;;){		
-						FileWriter fw = new FileWriter(cFile,true);
-						PrintWriter pw = new PrintWriter(fw);
-						
-						if (executor.hasProcessFinished(idjob)){
-							cadena = executor.readConsole(idjob);
-							
-						}
-						else{
-							executor.acquireLock(idjob);
-							cadena = executor.readConsole(idjob);
-							
-							executor.releaseLock(idjob);
-						}
-						
-						
-						if (cadena != null){
-							pw.write(cadena+"\r\n");
-							cos.write(cadena+"\n");
-							cos.flush();
-							pw.flush();
-							pw.close();
-							
-						}
-						else{
-							if (executor.hasProcessFinished(idjob)){
-								executor.setState(idjob, "Finished");
-								break;
-							}
-							else{
-								Thread.sleep(5000);
-							}
-						}
-					}
-					executor.setState(idjob, "Finished");
-					cos.close();
-				} catch (Exception e) {
-					RESClientPlugin.log(e);
-				}
-			}
-		}.start();	
-	}
+	
 	
 }

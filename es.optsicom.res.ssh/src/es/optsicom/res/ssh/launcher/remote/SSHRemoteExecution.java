@@ -25,6 +25,8 @@ import java.util.List;
 
 
 
+
+
 import javax.swing.JOptionPane;
 
 import org.eclipse.core.resources.IResource;
@@ -56,6 +58,7 @@ import es.optsicom.res.ssh.session.UserSessionInfo;
 public class SSHRemoteExecution implements IRemoteExecution {
 	
 	private static final String FOLDERNAME="optsicom-res";
+	private static final String LOGFILE="/log.txt";
 	private Session session;
 	String name="SSH";
 	private boolean connected;
@@ -73,6 +76,7 @@ public class SSHRemoteExecution implements IRemoteExecution {
 	private List userSelectedResources;
 	private IJavaProject project;
 	private String serverProjectPath;
+	private StringBuffer executionResultsPath;
 	private static final String resultFile="resultFile.txt";
 	private boolean isOutput;
 	public SSHRemoteExecution(){
@@ -90,7 +94,6 @@ public class SSHRemoteExecution implements IRemoteExecution {
 			subMonitor.subTask("Creating project folders");
 			String opsticomFolder="/home/"+this.user+"/"+this.FOLDERNAME;
 			this.executeCommand("mkdir "+opsticomFolder);
-			
 					
 			DateFormat hourFormat = new SimpleDateFormat("HH-mm-ss");
 			DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -106,7 +109,12 @@ public class SSHRemoteExecution implements IRemoteExecution {
 			subMonitor.subTask("Sending project");
 			send(subMonitor);
 			
-			this.executeCommand("find  -maxdepth 1 -type f  > "+this.serverProjectPath+"/initalDirectories.txt");
+			executeCommand("echo name:"+this.project.getElementName()+">>"+serverProjectPath+LOGFILE);
+			executeCommand("echo date:"+dateFormat.format(date)+
+					"/"+hourFormat.format(date)+">>"+serverProjectPath+LOGFILE);
+			executeCommand("echo status:sent "+">>"+serverProjectPath+LOGFILE);
+			
+			
 			
 			subMonitor.subTask("Executing project");
 			//Buscamos los archivos java los almacenamos y los compilamos guardando la dirección
@@ -116,26 +124,50 @@ public class SSHRemoteExecution implements IRemoteExecution {
 			
 			String expressionCompileJava="javac @"+serverProjectPath+"/javafiles.txt";
 			executeCommand(expressionCompileJava);
+			executeCommand("sed -i 's/status:[a-z]*/status:compiled/' "+serverProjectPath+LOGFILE);
 			
-			
+
 			
 			String mainClassPath=getMainClassPath(serverProjectPath);
 			
 			mainClassPath=mainClassPath.replaceAll(mainClass+".java", "");
-			
-			String idjob=dateFormat.format(date)+
-					"_"+hourFormat.format(date);
+			executeCommand("echo mainclass:"+mainClassPath+mainClass+"  "+">>"+serverProjectPath+LOGFILE);
+			String idjob=serverProjectFolder;
 			
 			ScopedPreferenceStore sps =  (ScopedPreferenceStore) RESClientPlugin.getDefault().getPreferenceStore();
-			sps.putValue(idjob,host+":"+port);
+			sps.putValue(idjob,name+":"+host+":"+port+":"+user+":"+password);
+			executeCommand("sed -i 's/status:[a-z]*/status:executing/' "+serverProjectPath+LOGFILE);
 			
+			
+			//Creamos los ficheros necesarios antes de realizar el control de los ficheros de salida.
+			executeCommand("touch "+serverProjectPath+LOGFILE);
+			executeCommand("touch "+serverProjectPath+"/"+resultFile);
+			executeCommand("touch "+serverProjectPath+"/finalDirectories.txt");
+			
+			executeCommand("find "+this.serverProjectPath+"  -maxdepth 1 -type f  > "+this.serverProjectPath+"/initialDirectories.txt");
 			executeProject(mainClassPath);
+			executeCommand("find "+this.serverProjectPath+"  -maxdepth 1 -type f  > "+this.serverProjectPath+"/finalDirectories.txt");
 			
-			this.executeCommand("find  -maxdepth 1 -type f  > "+this.serverProjectPath+"/finalDirectories.txt");
-			this.executeCommand("diff "+this.serverProjectPath+"/initalDirectories.txt  "+this.serverProjectPath+"/finalDirectories.txt | grep -v \"^---\" | grep -v \"^[0-9c0-9]\" > "+this.serverProjectPath+"/outputFiles.txt");
+			executeCommand("diff "+this.serverProjectPath+"/initialDirectories.txt  "+this.serverProjectPath+"/finalDirectories.txt"
+					+ " | grep -v \"^---\" | grep -v \"^[0-9c0-9]\" "
+					+ "> "+this.serverProjectPath+"/outputFiles.txt");
+			executeCommand("echo output files: >> "+serverProjectPath+LOGFILE);
+			executeCommand("cat "+this.serverProjectPath+"/outputFiles.txt"+" >> "+serverProjectPath+LOGFILE);
 			
-			subMonitor.subTask("Geetting output files");
+			
+			//Obtenemos los resultados y los enviamos a la carpeta results.
+			IWorkspace ws = ResourcesPlugin.getWorkspace();
+			String workSpaceRoot = ws.getRoot().getLocation().toOSString();
+			executionResultsPath = new StringBuffer();
+			executionResultsPath.append(workSpaceRoot);
+			executionResultsPath.append(File.separator);
+			executionResultsPath.append(this.project.getElementName());
+			File folder = new File(executionResultsPath+"/results");
+			folder.mkdirs();
+			
+			subMonitor.subTask("Getting output files");
 			this.isOutput=this.sendOutputFiles();
+			executeCommand("sed -i 's/status:[a-z]*/status:finished/' "+serverProjectPath+LOGFILE);
 			subMonitor.subTask("Opening console");
 			this.openConsole(idjob);
 		}
@@ -180,12 +212,12 @@ public class SSHRemoteExecution implements IRemoteExecution {
 	public void send(SubMonitor monitor){
 		IWorkspace ws = ResourcesPlugin.getWorkspace();
 		String workSpaceRoot = ws.getRoot().getLocation().toOSString();
-		StringBuffer executionResultsPath = new StringBuffer();
-		executionResultsPath.append(workSpaceRoot);
-		executionResultsPath.append(File.separator);
-		executionResultsPath.append(this.project.getElementName());
+		StringBuffer projectPath = new StringBuffer();
+		projectPath.append(workSpaceRoot);
+		projectPath.append(File.separator);
+		projectPath.append(this.project.getElementName());
 		
-		String expressionSCP="scp -r "+executionResultsPath+" "+user+"@"+host+": "+serverProjectPath;
+		String expressionSCP="scp -r "+projectPath+" "+user+"@"+host+": "+serverProjectPath;
 		executeCommand(expressionSCP);
 		//Enviamos los archivos adicionales	(creando las carpetas necesarias)	
 		if(userSelectedResources != null) { 
@@ -218,14 +250,7 @@ public class SSHRemoteExecution implements IRemoteExecution {
 			cm = plugin.getConsoleManager();
 			cm.addConsoles(new IConsole[]{miconsola});
 			cos = miconsola.newOutputStream();
-			IWorkspace ws = ResourcesPlugin.getWorkspace();
-			String workSpaceRoot = ws.getRoot().getLocation().toOSString();
-			StringBuffer executionResultsPath = new StringBuffer();
-			executionResultsPath.append(workSpaceRoot);
-			executionResultsPath.append(File.separator);
-			executionResultsPath.append(this.project.getElementName());
-			File folder = new File(executionResultsPath+"/results");
-			folder.mkdirs();
+
 			this.executeCommand("scp -r "+user+"@"+host+": "+serverProjectPath+"/"+resultFile+" "+executionResultsPath+"/results");
 			File localResultFile= new File (executionResultsPath+"/results/"+resultFile);
 			FileReader fr= new FileReader(localResultFile);
@@ -238,7 +263,7 @@ public class SSHRemoteExecution implements IRemoteExecution {
 			cos.write("Finished\n");
 			cos.flush();
 			if (this.isOutput){
-				cos.write("There are some output files in : "+serverProjectPath+" \n");
+				cos.write("There are some output files in : "+executionResultsPath+"/results \n");
 					cos.flush();
 			}
 			cos.close();
@@ -328,27 +353,20 @@ public class SSHRemoteExecution implements IRemoteExecution {
 		for(String arg : this.programArgs) {
 			args+=arg+" ";
 		}
-		this.executeCommand("touch "+serverProjectPath+"/"+resultFile);
+		
 		//Inicializamos el fichero por si contiene algo
 		this.executeCommand("echo  > "+serverProjectPath+"/"+resultFile);
-		String[] outputShell=this.executeCommand("java -cp "+mainClassPath+" "+mainClass+" "+args+ " >> "+serverProjectPath+"/"+resultFile);
+		String[] outputShell=this.executeCommand("cd "+serverProjectPath+" && java -cp "+mainClassPath+" "+mainClass+" "+args+ " >> "+serverProjectPath+"/"+resultFile);
 	}
 
 	private boolean sendOutputFiles(){
 		boolean isOutput=false;
-		IWorkspace ws = ResourcesPlugin.getWorkspace();
-		String workSpaceRoot = ws.getRoot().getLocation().toOSString();
-		StringBuffer executionResultsPath = new StringBuffer();
-		executionResultsPath.append(workSpaceRoot);
-		executionResultsPath.append(File.separator);
-		executionResultsPath.append(this.project.getElementName());
-
+		
 		String[] outputShell=this.executeCommand("grep \"\" "+this.serverProjectPath+"/outputFiles.txt");
 		for(int i=0; i<outputShell.length;i++){
 			isOutput=true;
 			String path=outputShell[i].substring(2, outputShell[i].length());
-			this.executeCommand("scp -r "+user+"@"+host+": "+path+" "+executionResultsPath);
-			this.executeCommand("rm -rf "+path);
+			this.executeCommand("scp -r "+user+"@"+host+": "+path+" "+executionResultsPath+"/results");
 		}			
 		return isOutput;
 	}
@@ -403,6 +421,98 @@ public class SSHRemoteExecution implements IRemoteExecution {
 	public String getZipName() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public String getState(String idjob){
+		connect();
+		String opsticomFolder="/home/"+this.user+"/"+this.FOLDERNAME;
+		String logPath=opsticomFolder+"/"+idjob;
+		String [] output=executeCommand("grep 'status:[a-z]*' "+logPath+LOGFILE);
+		String status="undetermined";
+		if (output.length>0){
+			status=output[0];
+			String[] tokens= status.split(":");
+			if (tokens.length>1){
+				status=tokens[1];
+			}
+			else{
+				
+			}
+		}
+		else{
+			
+		}
+		return status;
+	}
+
+	@Override
+	public void getResultFromView(String workspace, String idjob) {
+		connect();
+		ChannelExec channelExec;
+		try {
+			MessageConsole miconsola;
+			ConsolePlugin plugin;
+			IConsoleManager cm;
+			final IOConsoleOutputStream cos;
+			miconsola = new MessageConsole("Consola Optsicom RES", null);
+			miconsola.activate();
+			plugin = ConsolePlugin.getDefault();
+			cm = plugin.getConsoleManager();
+			cm.addConsoles(new IConsole[]{miconsola});
+			cos = miconsola.newOutputStream();
+			
+			//Obtenemos el nombre del proyecto
+			String opsticomFolder="/home/"+this.user+"/"+this.FOLDERNAME;
+			String logPath=opsticomFolder+"/"+idjob;
+			String [] output=executeCommand("grep 'name:[a-z]*' "+logPath+LOGFILE);
+			String name="undetermined";
+			if (output.length>0){
+				name=output[0];
+				String[] tokens= name.split(":");
+				if (tokens.length>1){
+					name=tokens[1];
+				}
+				else{
+					
+				}
+			}
+			else{
+				
+			}
+			
+			File folder = new File(workspace+"/"+name+"/results");
+			folder.mkdirs();
+			
+			serverProjectPath="/home/"+this.user+"/"+this.FOLDERNAME+"/"+idjob;
+			//Enviamos los archivos de salida
+			String[] outputShell=this.executeCommand("grep \"\" "+serverProjectPath+"/outputFiles.txt");
+			for(int i=0; i<outputShell.length;i++){
+				isOutput=true;
+				String path=outputShell[i].substring(2, outputShell[i].length());
+				this.executeCommand("scp -r "+user+"@"+host+": "+path+" "+workspace+"/"+name+"/results");
+			}
+			
+			this.executeCommand("scp -r "+user+"@"+host+": "+serverProjectPath+"/"+resultFile+" "+workspace+"/"+name+"/results");
+			File localResultFile= new File (workspace+"/"+name+"/results/"+resultFile);
+			FileReader fr= new FileReader(localResultFile);
+			BufferedReader bf= new BufferedReader(fr);
+			String line;
+			while((line=bf.readLine())!=null){
+				cos.write(line+"\n");
+				cos.flush();
+			}
+			cos.write("Finished\n");
+			cos.flush();
+			if (this.isOutput){
+				cos.write("There are some output files in : "+workspace+"/"+name+"/results \n");
+					cos.flush();
+			}
+			cos.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}     
 	}
 
 	

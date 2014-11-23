@@ -32,4 +32,6 @@ public interface IRemoteExecution {
 	boolean validateExecution();
 	String getName();
 	String getZipName();
+	String getState(String idjob);
+	void getResultFromView(String workspace, String idjob);
 }

@@ -187,7 +187,7 @@ public class RMIRemoteExecution implements IRemoteExecution {
 			}
 			
 			ScopedPreferenceStore sps =  (ScopedPreferenceStore) RESClientPlugin.getDefault().getPreferenceStore();
-			sps.putValue(idjob,host+":"+portRMI);
+			sps.putValue(idjob,name+":"+host+":"+portRMI+":"+user+":"+password);
 
 			//mgarcia: Optiscom Res evolution
 			subMonitor.subTask("Getting resulting files");
@@ -479,5 +479,109 @@ public class RMIRemoteExecution implements IRemoteExecution {
 			return false;
 		} 
 		
+	}
+	@Override
+	public String getState(String idjob) {
+		OptsicomRemoteServer veex;
+		OptsicomRemoteExecutor executor;
+		if (!host.isEmpty()){
+			try {
+				veex = (OptsicomRemoteServer) Naming.lookup("//"+host+":"+portRMI +"/optsicom");
+				executor = veex.getExecutor();
+				return executor.getState(idjob);
+			} catch (Exception e) {
+				RESClientPlugin.log(e);
+				return "undetermined";
+			}
+		}
+		else{
+			return "undetermined";
+		}
+	}
+	@Override
+	public void getResultFromView(String workspace, String idjob) {
+		OptsicomRemoteServer veex=null;
+		if (!host.isEmpty()){
+			
+			try {
+				veex = (OptsicomRemoteServer) Naming.lookup("//"+host+":"+portRMI+"/optsicom");
+				executor = veex.getExecutor();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			getConsole(executor, idjob);
+		}
+	}
+private void getConsole(final OptsicomRemoteExecutor executor,final String idjob) {
+		
+		MessageConsole miconsola;
+		ConsolePlugin plugin;
+		IConsoleManager cm;
+		final IOConsoleOutputStream cos;
+		miconsola = new MessageConsole("Consola"+idjob, null);
+		miconsola.activate();
+
+		plugin = ConsolePlugin.getDefault();
+		cm = plugin.getConsoleManager();
+		cm.addConsoles(new IConsole[]{miconsola});
+		
+		cos = miconsola.newOutputStream();
+		
+		
+
+		new Thread(){
+			public void run(){
+				try {
+					String cadena = "";
+					IPath statePath = RESClientPlugin.getDefault().getStateLocation();
+					File cFile = new File(statePath.toFile(), "Clientconsole_"+idjob+".txt");
+					
+					cos.write(cadena);
+					cos.flush();
+
+					
+					int contador = 0;
+					for (;;){		
+						FileWriter fw = new FileWriter(cFile,true);
+						PrintWriter pw = new PrintWriter(fw);
+						
+						if (executor.hasProcessFinished(idjob)){
+							cadena = executor.readConsole(idjob);
+							
+						}
+						else{
+							executor.acquireLock(idjob);
+							cadena = executor.readConsole(idjob);
+							
+							executor.releaseLock(idjob);
+						}
+						
+						
+						if (cadena != null){
+							pw.write(cadena+"\r\n");
+							cos.write(cadena+"\n");
+							cos.flush();
+							pw.flush();
+							pw.close();
+							
+						}
+						else{
+							if (executor.hasProcessFinished(idjob)){
+								executor.setState(idjob, "Finished");
+								break;
+							}
+							else{
+								Thread.sleep(5000);
+							}
+						}
+					}
+					executor.setState(idjob, "Finished");
+					cos.close();
+				} catch (Exception e) {
+					RESClientPlugin.log(e);
+				}
+			}
+		}.start();	
 	}
 }
