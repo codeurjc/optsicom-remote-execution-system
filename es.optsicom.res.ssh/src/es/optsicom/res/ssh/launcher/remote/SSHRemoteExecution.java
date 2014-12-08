@@ -344,8 +344,8 @@ public class SSHRemoteExecution implements IRemoteExecution {
 	}
 	
 	private String getMainClassPath(String serverProjectPath){
-			
 		String[] shellOutputs=this.executeCommand("grep "+this.mainClass+".java "+serverProjectPath+"/javafiles.txt");		
+		
 		if(shellOutputs!=null){
 			return shellOutputs[0];
 		}

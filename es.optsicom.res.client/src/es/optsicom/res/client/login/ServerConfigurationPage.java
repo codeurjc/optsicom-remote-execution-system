@@ -126,6 +126,7 @@ public class ServerConfigurationPage extends WizardPage {
 		root = SecurePreferencesFactory.getDefault();
 		
 		savedConnections.setItems(serverNames);
+		savedConnections.add("", 0);
 		savedConnections.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -133,25 +134,33 @@ public class ServerConfigurationPage extends WizardPage {
 				int itemSelected = c.getSelectionIndex();
 				Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
 				Preferences savedServers = prefs.node(SERVERS);
-				String parameters = new String(savedServers.get(c.getItem(itemSelected), ""));
-				StringTokenizer st = new StringTokenizer(parameters, ":");
-				txtHost.setText(st.nextToken());
-				txtPort.setText(st.nextToken());
-				String connectionTypeName= st.nextToken();			
-				connectionType.select(connectionType.indexOf(connectionTypeName));
-				txtUser.setText(st.nextToken());
-				//mgarcia: Optsicom res Evolution
-				if (root != null) {
-					if (root.nodeExists(OPTSICOM)) {
-						ISecurePreferences node = root.node(OPTSICOM);
-						try {
-							if(node.get(c.getItem(itemSelected), null) != null){
-								txtPass.setText(node.get(c.getItem(itemSelected), null));
+				if(c.getItem(itemSelected)!=""){
+					connectionType.setEnabled(false);
+				}
+				else{
+					connectionType.setEnabled(true);
+				}
+				if(savedServers.get(c.getItem(itemSelected), "")!=null){
+					String parameters = new String(savedServers.get(c.getItem(itemSelected), ""));
+					StringTokenizer st = new StringTokenizer(parameters, ":");
+					txtHost.setText(st.nextToken());
+					txtPort.setText(st.nextToken());
+					String connectionTypeName= st.nextToken();			
+					connectionType.select(connectionType.indexOf(connectionTypeName));
+					txtUser.setText(st.nextToken());
+					//mgarcia: Optsicom res Evolution
+					if (root != null) {
+						if (root.nodeExists(OPTSICOM)) {
+							ISecurePreferences node = root.node(OPTSICOM);
+							try {
+								if(node.get(c.getItem(itemSelected), null) != null){
+									txtPass.setText(node.get(c.getItem(itemSelected), null));
+								}
+							} catch (StorageException e1) {
+								RESClientPlugin.log(e1);
 							}
-						} catch (StorageException e1) {
-							RESClientPlugin.log(e1);
-						}
-					} 
+						} 
+					}
 				}
 			}
 		});
