@@ -359,7 +359,6 @@ public class SSHRemoteExecution implements IRemoteExecution {
 		for(String arg : this.programArgs) {
 			args+=arg+" ";
 		}
-		
 		//Inicializamos el fichero por si contiene algo
 		executeCommand("echo  > "+serverProjectPath+"/"+resultFile);
 		String[] outputShell=this.executeCommand("cd "+serverProjectPath+" && java -cp "+mainClassPath+" "+mainClass+" "+args+ " >> "+serverProjectPath+"/"+resultFile);
@@ -415,7 +414,7 @@ public class SSHRemoteExecution implements IRemoteExecution {
 	@Override
 	public boolean validateExecution() {
 		this.connect();
-		return this.session!=null;
+		return session.isConnected();
 	}
 
 	@Override

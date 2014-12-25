@@ -198,7 +198,7 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 			config = wc.doSave();
 		} catch (Exception e) {
 			RESClientPlugin.log(e);
-			MessageDialog.openError(getShell(), "Launch Configuration Error", e.getMessage());
+			//MessageDialog.openError(getShell(), "Launch Configuration Error", e.getMessage());
 		}
 		return config;
 	}
@@ -292,11 +292,7 @@ public class RemoteVersionedJavaShortcut extends JavaApplicationLaunchShortcut {
 				}
 			}
 		});
-		job.schedule();
-		
-		
-		
-						
+		job.schedule();				
 	}
 	
 	/* (non-Javadoc)

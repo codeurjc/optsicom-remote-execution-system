@@ -2,6 +2,7 @@ package es.optsicom.res.client.preferences;
 
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Window;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -21,9 +22,11 @@ import org.eclipse.equinox.security.storage.SecurePreferencesFactory;
 import org.eclipse.equinox.security.storage.StorageException;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.PreferencePage;
+import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -34,6 +37,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
@@ -59,19 +63,22 @@ public class OptsicomPreferencePage
 	private ISecurePreferences root;
 	private Table tableSavedConfifurations;
 	
+	private Button bEdit;
+	private Button bDelete;
+	
 	public void init(IWorkbench workbench) {
 		noDefaultAndApplyButton();
 	}
 
-	protected Control createContents(Composite parent) {
+	protected Control createContents(final Composite parent) {
 	
-		Composite contents =new Composite (parent,SWT.NONE| SWT.NORMAL);
+		final Composite contents =new Composite (parent,SWT.NONE| SWT.NORMAL);
 		
 		GridLayout gly = new GridLayout (2,false);
 		contents.setLayout(gly);
 		contents.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,false));
 		
-		tableSavedConfifurations= new Table(contents, SWT.BORDER | SWT.MULTI);
+		tableSavedConfifurations= new Table(contents, SWT.BORDER | SWT.SINGLE);
 		tableSavedConfifurations.setLinesVisible(true);
 		tableSavedConfifurations.setHeaderVisible(true);
 		TableColumn c1= new TableColumn(tableSavedConfifurations, SWT.NONE);
@@ -91,32 +98,106 @@ public class OptsicomPreferencePage
 		gridTable.heightHint= 200;
 		tableSavedConfifurations.setLayoutData(gridTable);
 		
+		tableSavedConfifurations.addListener(SWT.Selection, new Listener(){
+
+			@Override
+			public void handleEvent(Event event) {
+				if (tableSavedConfifurations.getSelection().length>0){
+					bEdit.setEnabled(true);
+					bDelete.setEnabled(true);
+				}
+				else{
+					bEdit.setEnabled(false);
+					bDelete.setEnabled(false);
+				}
+			}
+			
+		});
 		
 		Composite contentsEdit =new Composite (contents,SWT.RIGHT| SWT.NORMAL);
 		contentsEdit.setLayoutData(new GridData(SWT.FILL,SWT.TOP,true,false));
 		gly = new GridLayout (1,false);
 		contentsEdit.setLayout(gly);
 		
-		Button bEdit = new Button (contentsEdit, SWT.CENTER);
+		bEdit = new Button (contentsEdit, SWT.CENTER);
 		bEdit.setText("Edit..");
+		bEdit.setEnabled(false);
+		
+		root = SecurePreferencesFactory.getDefault();
+		
 		bEdit.addListener(SWT.Selection, new Listener() {
 			@Override
 			public void handleEvent(Event event) {
-				JOptionPane.showMessageDialog(null, "Not developed");
+				//JOptionPane.showMessageDialog(null, "Not developed");
+				TableItem [] row=tableSavedConfifurations.getSelection();
+				if(row!=null){
+					String connectionName=row[0].getText();
+					Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
+					Preferences savedServers = prefs.node(SERVERS);
+					
+					if(savedServers.get(connectionName, "")!=null){
+						String parameters = new String(savedServers.get(connectionName, ""));
+						StringTokenizer st = new StringTokenizer(parameters, ":");
+						String host= st.nextToken();
+						String port= st.nextToken();
+						String connectionType= st.nextToken();		
+						String user= st.nextToken();	
+						String pass="";
+						if (root != null) {
+							if (root.nodeExists(OPTSICOM)) {
+								ISecurePreferences node = root.node(OPTSICOM);
+								try {
+									if(node.get(connectionName, null) != null){
+										pass= node.get(connectionName, null);
+										
+									}
+								} catch (StorageException e1) {
+									RESClientPlugin.log(e1);
+								}
+							} 
+						}
+						
+						OptsicomEditConfiguration editConfigurationView = new OptsicomEditConfiguration(contents.getShell(),user, pass, host, port, connectionName, connectionType);
+						editConfigurationView.open();
+						loadTable();
+					}
+				}
 			}
 		});
 		
-		Button bDelete = new Button (contentsEdit, SWT.CENTER);
+		bDelete = new Button (contentsEdit, SWT.CENTER);
 		bDelete.setText("Delete");
+		bDelete.setEnabled(false);
 		bDelete.addListener(SWT.Selection, new Listener() {
 			@Override
 			public void handleEvent(Event event) {
 				TableItem [] row=tableSavedConfifurations.getSelection();
-				String connectionName=row[0].getText();
-				Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
-				Preferences savedServers = prefs.node(SERVERS);
-				savedServers.remove(connectionName);
-				loadTable();
+				if(row!=null){
+					String connectionName=row[0].getText();
+					Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
+					boolean resultConfirm=MessageDialog.openConfirm(contents.getShell(), "Confirm", "Are you sure to delelte the saved configuration?");
+					if(prefs!=null && resultConfirm){
+						Preferences savedServers = prefs.node(SERVERS);
+						savedServers.remove(connectionName);
+						if (root != null) {
+							ISecurePreferences node = root.node(OPTSICOM);
+							try {
+								if(node.get(connectionName, null)!=null){
+									node.remove(connectionName);
+								}
+							} catch (StorageException e) {
+								MessageDialog.openError(contents.getShell(), "Error", "It was impossible to delete the saved configuration.");
+							}
+						}
+					}
+					else{
+						if(prefs==null){
+							MessageDialog.openError(contents.getShell(), "Error", "It was impossible to delete the saved configuration.");
+						}
+					}
+					
+					loadTable();
+				}
 			}
 		});
 		
@@ -163,6 +244,10 @@ public class OptsicomPreferencePage
 			item.setText(1,host);
 			item.setText(2,connectionTypeName);
 		}
+		bDelete.setEnabled(false);
+		bEdit.setEnabled(false);
 	}
+	
+
 	
 }
