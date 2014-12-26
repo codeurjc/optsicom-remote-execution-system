@@ -345,7 +345,7 @@ public class ServerConfigurationPage extends WizardPage {
 		gridDataHV.horizontalAlignment = GridData.FILL;
 		gridDataHV.grabExcessHorizontalSpace = true;	 
 		txtPrgarg.setLayoutData(gridDataHV);
-
+		
 		setControl(contents);
 	}
 

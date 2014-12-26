@@ -175,7 +175,7 @@ public class OptsicomPreferencePage
 				if(row!=null){
 					String connectionName=row[0].getText();
 					Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
-					boolean resultConfirm=MessageDialog.openConfirm(contents.getShell(), "Confirm", "Are you sure to delelte the saved configuration?");
+					boolean resultConfirm=MessageDialog.openConfirm(contents.getShell(), "Confirm", "Are you sure to delelte the saved configuration selected?");
 					if(prefs!=null && resultConfirm){
 						Preferences savedServers = prefs.node(SERVERS);
 						savedServers.remove(connectionName);
@@ -200,6 +200,48 @@ public class OptsicomPreferencePage
 				}
 			}
 		});
+		
+		Button deleteAll = new Button(contents, SWT.PUSH);
+		deleteAll.setText("Delete all");
+		deleteAll.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent event) {
+				TableItem [] rows=tableSavedConfifurations.getItems();
+				if(rows!=null){
+					Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
+					boolean resultConfirm=MessageDialog.openConfirm(contents.getShell(), "Confirm", "Are you sure to delelte all of the saved configurations?");
+					if(prefs!=null && resultConfirm){
+						for(TableItem tableItem : rows){
+							Preferences savedServers = prefs.node(SERVERS);
+							savedServers.remove(tableItem.getText(0));
+							if (root != null) {
+								ISecurePreferences node = root.node(OPTSICOM);
+								try {
+									if(node.get(tableItem.getText(0), null)!=null){
+										node.remove(tableItem.getText(0));
+									}
+								} catch (StorageException e) {
+									MessageDialog.openError(contents.getShell(), "Error", "It was impossible to delete all of the saved configurations.");
+								}
+							}
+						}
+						
+					}
+					else{
+						if(prefs==null){
+							MessageDialog.openError(contents.getShell(), "Error", "It was impossible to delete all of the saved configurations.");
+						}
+					}
+					
+					loadTable();
+				}
+			}
+		});
+		GridData gd = new GridData();
+		gd.horizontalSpan = 1;
+		gd.horizontalAlignment = SWT.LEFT;
+		deleteAll.setLayoutData(gd);
+		
 		
 		loadTable();
 		return new Composite(parent, SWT.NULL);

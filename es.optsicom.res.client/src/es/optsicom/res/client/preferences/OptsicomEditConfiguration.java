@@ -4,13 +4,17 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.StringTokenizer;
 
+import javax.swing.JOptionPane;
+
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.equinox.security.storage.ISecurePreferences;
 import org.eclipse.equinox.security.storage.SecurePreferencesFactory;
 import org.eclipse.equinox.security.storage.StorageException;
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
@@ -35,7 +39,7 @@ import es.optsicom.res.client.EvaluateContributionsHandler;
 import es.optsicom.res.client.RESClientPlugin;
 import es.optsicom.res.client.launcher.remote.IRemoteExecution;
 
-public class OptsicomEditConfiguration extends Dialog {
+public class OptsicomEditConfiguration extends TitleAreaDialog {
 
 	private static final String SERVERS = "SERVERS";
 	//mgarcia: Optiscom Res evolution 
@@ -59,6 +63,8 @@ public class OptsicomEditConfiguration extends Dialog {
 	private String connection;
 	private ISecurePreferences root;
 	
+	
+	
 
 	
 	public OptsicomEditConfiguration(Shell parentShell,String user, String pass, String host, String port, String connectionName, String connectionType){
@@ -70,10 +76,17 @@ public class OptsicomEditConfiguration extends Dialog {
 		this.connectionName=connectionName;
 		this.connection=connectionType;
 	}
-	
+	@Override
+	 public void create() {
+	    super.create();
+	    setTitle("Edit saved configuration");
+	    setMessage("Configure the connection in this page and press the Validate button");
+		
+	  }
 	public Control createDialogArea(Composite parent) {
-		Composite contents = (Composite) super.createDialogArea(parent);
-		contents.setSize(300, 800);
+		Composite contentsAux = (Composite) super.createDialogArea(parent);
+		Composite contents = new Composite(contentsAux, SWT.NONE | SWT.BORDER);
+		contents.setLayoutData(new GridData(SWT.FILL,SWT.FILL, true, false));
 		GridLayout gly = new GridLayout(2, false);
 		contents.setLayout(gly);
 		contents.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
@@ -196,11 +209,6 @@ public class OptsicomEditConfiguration extends Dialog {
 		argumentos.setLayout(gly);
 		argumentos.setSize(200, 150);
 		
-		
-			
-		
-		
-		
 		Label lblUser = new Label(datosPersonales, SWT.LEFT);
 		lblUser.setText("User:");
 		txtUser = new Text(datosPersonales, SWT.BORDER | SWT.SINGLE);
@@ -268,7 +276,20 @@ public class OptsicomEditConfiguration extends Dialog {
 		gridDataHV.grabExcessHorizontalSpace = true;	 
 		txtPrgarg.setLayoutData(gridDataHV);
 		
-		return contents;
+		Button validate = new Button(contentsAux, SWT.PUSH);
+		validate.setText("Validate connection");
+		validate.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent event) {
+				doValidate();
+			}
+		});
+		gridDataHV = new GridData();
+		gridDataHV.horizontalSpan = 1;
+		gd.horizontalAlignment = SWT.LEFT;
+		validate.setLayoutData(gridDataHV);
+		
+		return contentsAux;
 	}
 	public Text getTxtUser() {
 		return txtUser;
@@ -302,10 +323,6 @@ public class OptsicomEditConfiguration extends Dialog {
 		this.txtPort = txtPort;
 	}
 
-	public Combo getConnectionType() {
-		return connectionType;
-	}
-
 	public void setConnectionType(Combo connectionType) {
 		this.connectionType = connectionType;
 	}
@@ -318,7 +335,7 @@ public class OptsicomEditConfiguration extends Dialog {
 
   @Override
   protected Point getInitialSize() {
-    return new Point(600, 550);
+    return new Point(600, 600);
   }
   
   @Override
@@ -351,5 +368,62 @@ public class OptsicomEditConfiguration extends Dialog {
 	close();
   }
 	  
+  private void doValidate() {
+		try {
+			EvaluateContributionsHandler pluginHandler= new EvaluateContributionsHandler();
+			IRemoteExecution executor= pluginHandler.getPlugin(this.getConnectionType());
+			executor.setHost(txtHost.getText());
+			executor.setPort(txtPort.getText());
+			executor.setUser(txtUser.getText());
+			executor.setPassword(txtPass.getText());
+			if(executor.validateExecution()) {
+				connectionValid = true;
+				setErrorMessage(null);
+				setMessage("Connection validated succesfully");
+			} 
+			else {
+				setErrorMessage("Optsicom server returned null");
+				RESClientPlugin.log("IRemoteExecution.validateExecution() returned false");
+			}
+			
+		} catch (Exception e) {
+			RESClientPlugin.log(e);
+			setErrorMessage(e.getMessage());
+		}
+	}
+  public String getPasswd() {
+		return txtPass.getText();
+	}
+	
+	public String getUser() {
+		return txtUser.getText();
+	}
+	
+	public String getConnectionType() {
+		return connectionType.getItem(connectionType.getSelectionIndex());
+	}
 
+	public String getHost() {
+		return txtHost.getText();
+	}
+
+	public String getPort() {
+		return txtPort.getText();
+	}
+
+	public String getVMArgs() {
+		return txtVMarg.getText();
+	}
+
+	public String getProgramArgs() {
+		return txtPrgarg.getText();
+	}
+
+	public String getVMDebugPort() {
+		return txtPortDebug.getText();
+	}
+
+	public boolean isConnectionValid() {
+		return connectionValid;
+	}
 }
