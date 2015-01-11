@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.List;
 
@@ -37,8 +39,10 @@ import es.optsicom.res.server.OptsicomRemoteServer;
 import es.optsicom.res.server.PaqueteDatos;
 
 public class RMIRemoteExecution implements IRemoteExecution {
-private String name="RMI";
-	
+	private String name="RMI";
+	private OptsicomRemoteExecutor executor;
+
+	private String user;
 	private String host;
 	private String portRMI;
 	private String portDebug;
@@ -58,11 +62,13 @@ private String name="RMI";
 	public RMIRemoteExecution(){
 		
 	}
-	
+	public RMIRemoteExecution(String host, String portRMI){
+		this.host=host;
+		this.portRMI=portRMI;
+	}
 	@Override
-	public void send(String zipName, OptsicomRemoteExecutor executor,
-			SubMonitor monitor) throws IOException {
-final File f = new File(zipName);
+	public void send(SubMonitor monitor) throws IOException {
+		final File f = new File(zipName);
 		
 		InputStream in = new FileInputStream(f);
 		byte[] buf = new byte[1024];
@@ -75,7 +81,7 @@ final File f = new File(zipName);
 		
 		if ((longitud= in.read(buf)) > 0){
 			PaqueteDatos pd = new PaqueteDatos(buf,longitud);
-			executor.setZip(f,pd,true);
+			this.executor.setZip(f,pd,true);
 		}
 		
 		bytesRead += longitud;
@@ -88,7 +94,7 @@ final File f = new File(zipName);
 		boolean isCanceled = false;
 		while ( ((longitud=in.read(buf)) > 0) && !isCanceled) {
 			PaqueteDatos pd = new PaqueteDatos(buf,longitud);
-			executor.setZip(f,pd,false);
+			this.executor.setZip(f,pd,false);
 			bytesRead += longitud;
 			if (monitor.isCanceled()) {
 				isCanceled = true;
@@ -99,7 +105,7 @@ final File f = new File(zipName);
 			}
 		}
 		
-		executor.setZip(f,new PaqueteDatos(buf,-1),false);
+		this.executor.setZip(f,new PaqueteDatos(buf,-1),false);
 		in.close();
 		
 	}
@@ -135,14 +141,14 @@ final File f = new File(zipName);
 			subMonitor.subTask("Connecting to server");
 			RESClientPlugin.log("Entra");
 			OptsicomRemoteServer veex = (OptsicomRemoteServer) Naming.lookup("//"+host+":"+portRMI+"/optsicom");
-			OptsicomRemoteExecutor executor = veex.getExecutor();
+			this.executor = veex.getExecutor();
 			subMonitor.worked(1);
 			//mgarcia: Optiscom Res evolution
 			if (subMonitor.isCanceled()) {
 				return new Status(IStatus.CANCEL, RESClientPlugin.PLUGIN_ID, "Operation has been cancelled");
 			}
 			
-			while ( !executor.authenticate(password)) {
+			while ( !this.executor.authenticate(password)) {
 				RESClientPlugin.log("Authentication failed: wrong password");
 				return new Status(IStatus.ERROR, RESClientPlugin.PLUGIN_ID, "Authentication failed: wrong password");
 			}
@@ -154,7 +160,7 @@ final File f = new File(zipName);
 			//Enviamos el .zip
 			subMonitor.subTask("Sending zip file");
 			String projectName = resolver.getJavaProject().getElementName();
-			send(zipName, executor, subMonitor.newChild(1));
+			send(subMonitor.newChild(1));
 			subMonitor.worked(1);
 			//mgarcia: Optiscom Res evolution
 			if (subMonitor.isCanceled()) {
@@ -162,8 +168,8 @@ final File f = new File(zipName);
 			}
 			
 			subMonitor.subTask("Setting classpath and working dir");
-			executor.setJarDirs(resolver.getClasspath());
-			executor.setWorkingDir(projectName);
+			this.executor.setJarDirs(resolver.getClasspath());
+			this.executor.setWorkingDir(projectName);
 			subMonitor.worked(1);
 			//mgarcia: Optiscom Res evolution
 			if (subMonitor.isCanceled()) {
@@ -172,8 +178,8 @@ final File f = new File(zipName);
 			
 			subMonitor.subTask("Launching the program");
 			String zipLastSegment = zipName.substring(zipName.lastIndexOf(File.separator) + 1);
-			String idjob = executor.launch(mode,password,host,portRMI,/*portServer,*/portDebug,vmArgs,programArgs,mainClass,zipLastSegment);
-			executor.setState(idjob, "Running");
+			String idjob = this.executor.launch(mode,password,host,portRMI,/*portServer,*/portDebug,vmArgs,programArgs,mainClass,zipLastSegment);
+			this.executor.setState(idjob, "Running");
 			subMonitor.worked(1);
 			//mgarcia: Optiscom Res evolution
 			if (subMonitor.isCanceled()) {
@@ -181,18 +187,18 @@ final File f = new File(zipName);
 			}
 			
 			ScopedPreferenceStore sps =  (ScopedPreferenceStore) RESClientPlugin.getDefault().getPreferenceStore();
-			sps.putValue(idjob,host+":"+portRMI);
+			sps.putValue(idjob,name+":"+host+":"+portRMI+":"+user+":"+password);
 
 			//mgarcia: Optiscom Res evolution
 			subMonitor.subTask("Getting resulting files");
-			getResultingFile(executor,idjob);
+			getResultingFile(idjob);
 			subMonitor.worked(1);
 			if (subMonitor.isCanceled()) {
 				return new Status(IStatus.CANCEL, RESClientPlugin.PLUGIN_ID, "Operation has been cancelled");
 			}
 									
 			subMonitor.subTask("Opening remote console");
-			openConsole(executor,idjob);
+			openConsole(idjob);
 			subMonitor.worked(1);
 			//mgarcia: Optiscom Res evolution
 			if (subMonitor.isCanceled()) {
@@ -209,7 +215,7 @@ final File f = new File(zipName);
 	}
 
 	@Override
-	public void openConsole(final OptsicomRemoteExecutor executor, final String idjob) {
+	public void openConsole(final String idjob) {
 		MessageConsole miconsola;
 		ConsolePlugin plugin;
 		IConsoleManager cm;
@@ -302,14 +308,14 @@ final File f = new File(zipName);
 	}
 
 	@Override
-	public void getResultingFile(final OptsicomRemoteExecutor executor, final String idjob) {
+	public void getResultingFile(final String idjob) {
 		new Thread(){
 			public void run(){
 				try {
 					List<File> resultingFiles = executor.checkResultFiles(idjob);
 					if(!resultingFiles.isEmpty()){
 						executor.createZipResultingFiles(resultingFiles,idjob);
-						getZipResultingFile(executor, idjob);
+						getZipResultingFile(idjob);
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -319,11 +325,9 @@ final File f = new File(zipName);
 		
 	}
 
-	@Override
-	public void getZipResultingFile(OptsicomRemoteExecutor executor,
-			String idjob) {
+	public void getZipResultingFile(String idjob) {
 		try {
-			long fileLenght = executor.getResultsFileLength(idjob);
+			long fileLenght = this.executor.getResultsFileLength(idjob);
 			IWorkspace ws = ResourcesPlugin.getWorkspace();
 			String workSpaceRoot = ws.getRoot().getLocation().toOSString();
 			String projectName = resolver.getJavaProject().getElementName();
@@ -342,7 +346,7 @@ final File f = new File(zipName);
 			
 			try {
 				
-				executor.createFileInputString(idjob);
+				this.executor.createFileInputString(idjob);
 				
 				OutputStream os;
 				os = new FileOutputStream(wFile,true);
@@ -350,7 +354,7 @@ final File f = new File(zipName);
 				PaqueteDatos pd = null;
 				int longitud = 0;
 				while(fileLenght > longitud){
-					pd = executor.readResultsFile(idjob,longitud);
+					pd = this.executor.readResultsFile(idjob,longitud);
 					if(pd!=null){
 						if( pd.getLongitud() > 0){
 							os.write(pd.getBuf(),0,pd.getLongitud());
@@ -362,7 +366,7 @@ final File f = new File(zipName);
 				}
 				os.close();
 				
-				executor.closeFileInputString(idjob);
+				this.executor.closeFileInputString(idjob);
 				
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -378,10 +382,6 @@ final File f = new File(zipName);
 
 	public void setHost(String host) {
 		this.host = host;
-	}
-
-	public void setPortRMI(String portRMI) {
-		this.portRMI = portRMI;
 	}
 
 	public void setPortDebug(String portDebug) {
@@ -444,5 +444,144 @@ final File f = new File(zipName);
 	@Override
 	public String getName() {
 		return name;
+	}
+
+	@Override
+	public void setPort(String port) {
+		this.portRMI=port;
+		
+	}
+
+	@Override
+	public void setUser(String user) {
+		this.user=user;
+		
+	}
+
+	@Override
+	public boolean validateExecution() {
+		OptsicomRemoteServer veex;
+		try {
+			veex = (OptsicomRemoteServer) Naming.lookup("//"+this.host+":"+this.portRMI+"/optsicom");
+			if(veex != null) {
+				executor = veex.getExecutor();
+				if(this.executor != null) {
+					return true;
+				} else {
+					return false;
+				}
+			} else {
+				return false;
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		} 
+		
+	}
+	@Override
+	public String getState(String idjob) {
+		OptsicomRemoteServer veex;
+		OptsicomRemoteExecutor executor;
+		if (!host.isEmpty()){
+			try {
+				veex = (OptsicomRemoteServer) Naming.lookup("//"+host+":"+portRMI +"/optsicom");
+				executor = veex.getExecutor();
+				return executor.getState(idjob);
+			} catch (Exception e) {
+				RESClientPlugin.log(e);
+				return "undetermined";
+			}
+		}
+		else{
+			return "undetermined";
+		}
+	}
+	@Override
+	public void getResultFromView(String workspace, String idjob) {
+		OptsicomRemoteServer veex=null;
+		if (!host.isEmpty()){
+			
+			try {
+				veex = (OptsicomRemoteServer) Naming.lookup("//"+host+":"+portRMI+"/optsicom");
+				executor = veex.getExecutor();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			getConsole(executor, idjob);
+		}
+	}
+private void getConsole(final OptsicomRemoteExecutor executor,final String idjob) {
+		
+		MessageConsole miconsola;
+		ConsolePlugin plugin;
+		IConsoleManager cm;
+		final IOConsoleOutputStream cos;
+		miconsola = new MessageConsole("Consola"+idjob, null);
+		miconsola.activate();
+
+		plugin = ConsolePlugin.getDefault();
+		cm = plugin.getConsoleManager();
+		cm.addConsoles(new IConsole[]{miconsola});
+		
+		cos = miconsola.newOutputStream();
+		
+		
+
+		new Thread(){
+			public void run(){
+				try {
+					String cadena = "";
+					IPath statePath = RESClientPlugin.getDefault().getStateLocation();
+					File cFile = new File(statePath.toFile(), "Clientconsole_"+idjob+".txt");
+					
+					cos.write(cadena);
+					cos.flush();
+
+					
+					int contador = 0;
+					for (;;){		
+						FileWriter fw = new FileWriter(cFile,true);
+						PrintWriter pw = new PrintWriter(fw);
+						
+						if (executor.hasProcessFinished(idjob)){
+							cadena = executor.readConsole(idjob);
+							
+						}
+						else{
+							executor.acquireLock(idjob);
+							cadena = executor.readConsole(idjob);
+							
+							executor.releaseLock(idjob);
+						}
+						
+						
+						if (cadena != null){
+							pw.write(cadena+"\r\n");
+							cos.write(cadena+"\n");
+							cos.flush();
+							pw.flush();
+							pw.close();
+							
+						}
+						else{
+							if (executor.hasProcessFinished(idjob)){
+								executor.setState(idjob, "Finished");
+								break;
+							}
+							else{
+								Thread.sleep(5000);
+							}
+						}
+					}
+					executor.setState(idjob, "Finished");
+					cos.close();
+				} catch (Exception e) {
+					RESClientPlugin.log(e);
+				}
+			}
+		}.start();	
 	}
 }

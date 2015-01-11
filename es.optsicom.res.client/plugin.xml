@@ -208,14 +208,6 @@
           name="Optsicom Res">
     </page>
  </extension>
- <extension
-       id="id1"
-       point="org.eclipse.equinox.security.secureStorage">
-    <provider
-          class="client.PasswordProvider:1"
-          priority="client.provider1">
-    </provider>
- </extension>
 
 
 </plugin>

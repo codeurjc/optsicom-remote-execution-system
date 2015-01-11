@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+   		 id="SSH"
+         point="es.optsicom.res.client.extensionpoint.remoteExecutor">
+      <remote
+            class="es.optsicom.res.ssh.launcher.remote.SSHRemoteExecution">
+      </remote>
+   </extension>
+    <extension point="org.eclipse.ui.propertyPages">
+       <page name="Folder Contents"
+               class="es.optsicom.res.ssh.propertypages.FolderInfoPropertyPage"
+               id="samples.ui.PropertyPage1">
+           <enabledWhen>
+               <instanceof value="org.eclipse.rse.subsystems.files.core.subsystems.IRemoteFile"/>                        
+           </enabledWhen>
+           <filter name="isDirectory" value="true"/>  
+        </page>
+   </extension>  
+   <extension point="org.eclipse.rse.core.subsystemConfigurations">
+        <configuration
+             id="samples.subsystems.factory"
+             systemTypeIds="org.eclipse.rse.systemtype.linux;org.eclipse.rse.systemtype.unix;org.eclipse.rse.systemtype.windows"
+             name="Teams"
+             class="samples.subsystems.DeveloperSubSystemConfiguration"
+             category="users"
+             vendor="ACME"
+        >
+        </configuration>
+   </extension>          
+</plugin>

@@ -14,13 +14,13 @@ import org.eclipse.jdt.core.IJavaProject;
 import es.optsicom.res.server.OptsicomRemoteExecutor;
 
 public interface IRemoteExecution {
-	void send(String zipName, OptsicomRemoteExecutor executor, SubMonitor monitor) throws IOException;
+	void send(SubMonitor monitor) throws IOException;
 	IStatus run(IProgressMonitor monitor);
-	void openConsole(final OptsicomRemoteExecutor executor,final String idjob);
-	void getResultingFile(final OptsicomRemoteExecutor executor,final String idjob);
-	void getZipResultingFile(OptsicomRemoteExecutor executor,String idjob);
-	void setPortRMI(String portRmi);
+	void openConsole(String idjob);
+	void getResultingFile(String idjob);
+	void setPort(String port);
 	void setHost(String host);
+	void setUser(String user);
 	void setMainClass(String mainClass);
 	void setPassword(String password);
 	void setProgramArgs(String[] programArgs);
@@ -29,6 +29,9 @@ public interface IRemoteExecution {
 	void setUserSelectedResources(List userSelectedResources);
 	void setProject(IJavaProject project);
 	void setPortDebug(String portDebug);
+	boolean validateExecution();
 	String getName();
 	String getZipName();
+	String getState(String idjob);
+	void getResultFromView(String workspace, String idjob);
 }

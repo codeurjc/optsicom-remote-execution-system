@@ -5,7 +5,7 @@
          id="RMI"
          point="es.optsicom.res.client.extensionpoint.remoteExecutor">
       <remote
-            class="es.optsicom.res.rmi.RemoteExecution1">
+            class="es.optsicom.res.rmi.launcher.remote.RMIRemoteExecution">
       </remote>
    </extension>
 

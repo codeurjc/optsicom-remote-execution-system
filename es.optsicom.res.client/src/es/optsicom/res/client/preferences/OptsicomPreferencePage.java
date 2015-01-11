@@ -1,27 +1,46 @@
 package es.optsicom.res.client.preferences;
 
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Window;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+
+import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.equinox.security.storage.ISecurePreferences;
 import org.eclipse.equinox.security.storage.SecurePreferencesFactory;
 import org.eclipse.equinox.security.storage.StorageException;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.PreferencePage;
+import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
@@ -39,252 +58,238 @@ public class OptsicomPreferencePage
 
 	private static final String SERVERS = "SERVERS";
 	private static final String OPTSICOM = "/optsicom";
-	private Text txtPass;
-	private Text txtHost;
-	private Text txtPortRmi;
-	private Combo savedConnections;
+	
 	private HashMap<String,String> connections;
 	private ISecurePreferences root;
-	private Combo connectionType;
+	private Table tableSavedConfifurations;
+	
+	private Button bEdit;
+	private Button bDelete;
 	
 	public void init(IWorkbench workbench) {
-		setDescription("Configuration server");
+		noDefaultAndApplyButton();
 	}
 
-	protected Control createContents(Composite parent) {
+	protected Control createContents(final Composite parent) {
+	
+		final Composite contents =new Composite (parent,SWT.NONE| SWT.NORMAL);
 		
-		Composite contents = new Composite(parent, SWT.NONE | SWT.BORDER);
-		GridLayout gly = new GridLayout(2, false);
+		GridLayout gly = new GridLayout (2,false);
 		contents.setLayout(gly);
-		contents.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+		contents.setLayoutData(new GridData(SWT.FILL,SWT.FILL,true,false));
 		
-		Label comboLabel = new Label(contents, SWT.LEFT);
-		comboLabel.setText("Saved configuration:");
-		savedConnections = new Combo(contents, SWT.BORDER | SWT.READ_ONLY);
+		tableSavedConfifurations= new Table(contents, SWT.BORDER | SWT.SINGLE);
+		tableSavedConfifurations.setLinesVisible(true);
+		tableSavedConfifurations.setHeaderVisible(true);
+		TableColumn c1= new TableColumn(tableSavedConfifurations, SWT.NONE);
+		c1.setText("Name");
+		c1.setWidth(150);
+		
+		TableColumn c2= new TableColumn(tableSavedConfifurations, SWT.NONE);
+		c2.setText("Host");
+		c2.setWidth(100);
+
+		TableColumn c3= new TableColumn(tableSavedConfifurations, SWT.NONE);
+		c3.setText("ConnectionType");
+		c3.setWidth(100);
+		
+		tableSavedConfifurations.setVisible(true);
+		GridData gridTable = new GridData(SWT.FILL,SWT.FILL,true,true);
+		gridTable.heightHint= 200;
+		tableSavedConfifurations.setLayoutData(gridTable);
+		
+		tableSavedConfifurations.addListener(SWT.Selection, new Listener(){
+
+			@Override
+			public void handleEvent(Event event) {
+				if (tableSavedConfifurations.getSelection().length>0){
+					bEdit.setEnabled(true);
+					bDelete.setEnabled(true);
+				}
+				else{
+					bEdit.setEnabled(false);
+					bDelete.setEnabled(false);
+				}
+			}
+			
+		});
+		
+		Composite contentsEdit =new Composite (contents,SWT.RIGHT| SWT.NORMAL);
+		contentsEdit.setLayoutData(new GridData(SWT.FILL,SWT.TOP,true,false));
+		gly = new GridLayout (1,false);
+		contentsEdit.setLayout(gly);
+		
+		bEdit = new Button (contentsEdit, SWT.CENTER);
+		bEdit.setText("Edit..");
+		bEdit.setEnabled(false);
+		
+		root = SecurePreferencesFactory.getDefault();
+		
+		bEdit.addListener(SWT.Selection, new Listener() {
+			@Override
+			public void handleEvent(Event event) {
+				//JOptionPane.showMessageDialog(null, "Not developed");
+				TableItem [] row=tableSavedConfifurations.getSelection();
+				if(row!=null){
+					String connectionName=row[0].getText();
+					Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
+					Preferences savedServers = prefs.node(SERVERS);
+					
+					if(savedServers.get(connectionName, "")!=null){
+						String parameters = new String(savedServers.get(connectionName, ""));
+						StringTokenizer st = new StringTokenizer(parameters, ":");
+						String host= st.nextToken();
+						String port= st.nextToken();
+						String connectionType= st.nextToken();		
+						String user= st.nextToken();	
+						String pass="";
+						if (root != null) {
+							if (root.nodeExists(OPTSICOM)) {
+								ISecurePreferences node = root.node(OPTSICOM);
+								try {
+									if(node.get(connectionName, null) != null){
+										pass= node.get(connectionName, null);
+										
+									}
+								} catch (StorageException e1) {
+									RESClientPlugin.log(e1);
+								}
+							} 
+						}
+						
+						OptsicomEditConfiguration editConfigurationView = new OptsicomEditConfiguration(contents.getShell(),user, pass, host, port, connectionName, connectionType);
+						editConfigurationView.open();
+						loadTable();
+					}
+				}
+			}
+		});
+		
+		bDelete = new Button (contentsEdit, SWT.CENTER);
+		bDelete.setText("Delete");
+		bDelete.setEnabled(false);
+		bDelete.addListener(SWT.Selection, new Listener() {
+			@Override
+			public void handleEvent(Event event) {
+				TableItem [] row=tableSavedConfifurations.getSelection();
+				if(row!=null){
+					String connectionName=row[0].getText();
+					Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
+					boolean resultConfirm=MessageDialog.openConfirm(contents.getShell(), "Confirm", "Are you sure to delelte the saved configuration selected?");
+					if(prefs!=null && resultConfirm){
+						Preferences savedServers = prefs.node(SERVERS);
+						savedServers.remove(connectionName);
+						if (root != null) {
+							ISecurePreferences node = root.node(OPTSICOM);
+							try {
+								if(node.get(connectionName, null)!=null){
+									node.remove(connectionName);
+								}
+							} catch (StorageException e) {
+								MessageDialog.openError(contents.getShell(), "Error", "It was impossible to delete the saved configuration.");
+							}
+						}
+					}
+					else{
+						if(prefs==null){
+							MessageDialog.openError(contents.getShell(), "Error", "It was impossible to delete the saved configuration.");
+						}
+					}
+					
+					loadTable();
+				}
+			}
+		});
+		
+		Button deleteAll = new Button(contents, SWT.PUSH);
+		deleteAll.setText("Delete all");
+		deleteAll.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent event) {
+				TableItem [] rows=tableSavedConfifurations.getItems();
+				if(rows!=null){
+					Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
+					boolean resultConfirm=MessageDialog.openConfirm(contents.getShell(), "Confirm", "Are you sure to delelte all of the saved configurations?");
+					if(prefs!=null && resultConfirm){
+						for(TableItem tableItem : rows){
+							Preferences savedServers = prefs.node(SERVERS);
+							savedServers.remove(tableItem.getText(0));
+							if (root != null) {
+								ISecurePreferences node = root.node(OPTSICOM);
+								try {
+									if(node.get(tableItem.getText(0), null)!=null){
+										node.remove(tableItem.getText(0));
+									}
+								} catch (StorageException e) {
+									MessageDialog.openError(contents.getShell(), "Error", "It was impossible to delete all of the saved configurations.");
+								}
+							}
+						}
+						
+					}
+					else{
+						if(prefs==null){
+							MessageDialog.openError(contents.getShell(), "Error", "It was impossible to delete all of the saved configurations.");
+						}
+					}
+					
+					loadTable();
+				}
+			}
+		});
 		GridData gd = new GridData();
-		gd.horizontalAlignment = SWT.FILL;
-		gd.grabExcessHorizontalSpace = true;
-		savedConnections.setLayoutData(gd);
+		gd.horizontalSpan = 1;
+		gd.horizontalAlignment = SWT.LEFT;
+		deleteAll.setLayoutData(gd);
 		
 		
-		Label connectionLabel = new Label(contents, SWT.LEFT);
-		connectionLabel.setText("Choose a connection:");
-		connectionType = new Combo(contents, SWT.BORDER | SWT.READ_ONLY);
-		gd = new GridData();
-		gd.horizontalAlignment = SWT.FILL;
-		gd.grabExcessHorizontalSpace = true;
-		connectionType.setLayoutData(gd);
-		
-		String [] connectionTypeList=null;
-		EvaluateContributionsHandler pluginHandler= new EvaluateContributionsHandler();
-		try {
-			connectionTypeList=pluginHandler.getPluginNameList();
-		} catch (InvalidSyntaxException e3) {
-			// TODO Auto-generated catch block
-			e3.printStackTrace();
-		}
+		loadTable();
+		return new Composite(parent, SWT.NULL);
+	}
+	
+	protected  void	performApply() {
 		
 		
-		connectionType.setItems(connectionTypeList);
+	}
+	
+	
+	protected void performDefaults() {
 		
+		
+	}
+	
+	private void loadTable(){
+		tableSavedConfifurations.removeAll();
 		Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
 		Preferences savedServers = prefs.node(SERVERS);
-		
 		String[] serverNames = new String[0];
 		try {
 			serverNames = savedServers.keys();
 		} catch (BackingStoreException e) {
 			RESClientPlugin.log(e);
 		}
-		
-		connections = new HashMap<String, String>();
-		root = SecurePreferencesFactory.getDefault();
-				
-		savedConnections.setItems(serverNames);
-		savedConnections.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				Combo c = (Combo) e.widget;
-				int itemSelected = c.getSelectionIndex();
-				if(!connections.containsKey(c.getItem(itemSelected))){
-					Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
-					Preferences savedServers = prefs.node(SERVERS);
-					String parameters = new String(savedServers.get(c.getItem(itemSelected), ""));
-					StringTokenizer st = new StringTokenizer(parameters, ":");
-					txtHost.setText(st.nextToken());
-					txtPortRmi.setText(st.nextToken());
-					if (root != null) {
-						if (root.nodeExists(OPTSICOM)) {
-							ISecurePreferences node = root.node(OPTSICOM);
-							try {
-								if(node.get(c.getItem(itemSelected), null) != null){
-									txtPass.setText(node.get(c.getItem(itemSelected), null));
-								}
-							} catch (StorageException e1) {
-								RESClientPlugin.log(e1);
-							}
-						} 
-					}
-				} else {
-					String parameters = connections.get(c.getItem(itemSelected));
-					StringTokenizer st = new StringTokenizer(parameters, ":");
-					txtPass.setText(st.nextToken());
-					txtHost.setText(st.nextToken());
-					txtPortRmi.setText(st.nextToken());
-				}
-			}
-		});
-		
-		Group datosPersonales = new Group(contents, SWT.SHADOW_IN);
-		GridData gridDataHV = new GridData();
-		gridDataHV.horizontalAlignment = GridData.FILL;
-		gridDataHV.horizontalSpan = 2;
-		gridDataHV.grabExcessHorizontalSpace = true;
-		datosPersonales.setLayoutData(gridDataHV);
-		datosPersonales.setText("Authentication");
-		gly = new GridLayout();
-		gly.numColumns = 2;
-		datosPersonales.setLayout(gly);
-		datosPersonales.setSize(200, 200);
-		
-		Label lblPass = new Label(datosPersonales, SWT.CENTER);
-		lblPass.setText("Password:");
-		txtPass = new Text(datosPersonales, SWT.BORDER | SWT.PASSWORD);
-		gridDataHV = new GridData();
-		gridDataHV.horizontalSpan = 1;
-		gridDataHV.horizontalAlignment = GridData.FILL;
-		gridDataHV.grabExcessHorizontalSpace = true;	 
-		txtPass.setLayoutData(gridDataHV);
-		
-		Group datosConexion = new Group(contents, SWT.SHADOW_IN);
-		gridDataHV = new GridData();
-		gridDataHV = new GridData();
-		gridDataHV.horizontalSpan = 2;
-		gridDataHV.horizontalAlignment = GridData.FILL;
-		gridDataHV.grabExcessHorizontalSpace = true;
-		datosConexion.setLayoutData(gridDataHV);
-		datosConexion.setText("Connection data");
-		gly = new GridLayout();
-		gly.numColumns = 2;
-		datosConexion.setLayout(gly);
-		datosConexion.setSize(200, 200);
-		
-		Label lblHost = new Label(datosConexion, SWT.LEFT);
-		lblHost.setText("Host:");
-		txtHost = new Text(datosConexion, SWT.BORDER | SWT.SINGLE);
-		gridDataHV = new GridData();
-		gridDataHV.horizontalSpan = 1;
-		gridDataHV.horizontalAlignment = GridData.FILL;
-		gridDataHV.grabExcessHorizontalSpace = true;	 
-		txtHost.setLayoutData(gridDataHV);
-		
-		Label lblPortRmi = new Label(datosConexion, SWT.LEFT);
-		lblPortRmi.setText("Host RMI port:");
-		txtPortRmi = new Text(datosConexion, SWT.BORDER | SWT.SINGLE);
-		gridDataHV = new GridData();
-		gridDataHV.horizontalSpan = 1;
-		gridDataHV.horizontalAlignment = GridData.FILL;
-		gridDataHV.grabExcessHorizontalSpace = true;
-		txtPortRmi.setLayoutData(gridDataHV);
-		
-		if(serverNames.length == 0){
-			txtPass.setEnabled(false);
-			txtHost.setEnabled(false);
-			txtPortRmi.setEnabled(false);
-		}
-		
-		return new Composite(parent, SWT.NULL);
-	}
-	
-	protected  void	performApply() {
-		int itemSelected = savedConnections.getSelectionIndex();
-		if(itemSelected >= 0){
-			String configName = savedConnections.getItem(itemSelected);
-			String parameters = txtHost.getText() + ":" + txtPortRmi.getText() + ":" + connectionType.getItem(connectionType.getSelectionIndex());
-			connections.put(configName, parameters);
-		}
-		
-	}
-	
-	@SuppressWarnings("rawtypes")
-	public boolean performOk() {
-		int itemSelected = savedConnections.getSelectionIndex();
-		if(itemSelected >= 0){
-			String configName = savedConnections.getItem(itemSelected);
-			String parameters = txtHost.getText() + ":" + txtPortRmi.getText() + ":" + connectionType.getItem(connectionType.getSelectionIndex());
-			connections.put(configName, parameters);
-		}
-		
-		Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
-		Preferences savedServers = prefs.node(SERVERS);
-		
-		if(!connections.isEmpty()) {
-			Iterator iter = connections.entrySet().iterator();
-			while (iter.hasNext()) {
-				Map.Entry mEntry = (Map.Entry) iter.next();
-				System.out.println(mEntry.getKey() + " : " + mEntry.getValue());
-				StringTokenizer st = new StringTokenizer(mEntry.getValue().toString(), ":");
-				String password = st.nextToken();
-				String host = st.nextToken();
-				String portRmi = st.nextToken();
-				if (root != null) {
-					if (root.nodeExists(OPTSICOM)) {
-						ISecurePreferences node = root.node(OPTSICOM);
-						try {
-							if(mEntry.getKey().toString() != null){
-								node.put(mEntry.getKey().toString(),password, false);
-								node.flush();
-							}
-						} catch (StorageException e1) {
-							RESClientPlugin.log(e1);
-						} catch (IOException e) {
-							RESClientPlugin.log(e);
-						} 
-					} 
-				}
-				savedServers.put(mEntry.getKey().toString(), host + ":" + portRmi);
-			}
-			
-			try {
-				savedServers.flush();
-			} catch (BackingStoreException e1) {
-				RESClientPlugin.log(e1);
-				MessageDialog.openError(getShell(), "Saving settings", "Unable to store settings: " + e1.getMessage());
-			}
-		}
-		return true;
-		
-	}
-	
-	protected void performDefaults() {
-		
-		connections = new HashMap<String, String>();
-		
-		Preferences prefs = new InstanceScope().getNode(RESClientPlugin.PLUGIN_ID);
-		Preferences savedServers = prefs.node(SERVERS);
-				
-		int itemSelected = savedConnections.getSelectionIndex();
-		if(itemSelected >= 0){
-			String configName = savedConnections.getItem(itemSelected);
-			
-			String parameters = new String(savedServers.get(configName, ""));
+		for(int i=0; i<serverNames.length; i++){
+			String parameters = new String(savedServers.get(serverNames[i], ""));
 			StringTokenizer st = new StringTokenizer(parameters, ":");
-			txtHost.setText(st.nextToken());
-			txtPortRmi.setText(st.nextToken());
-			String connectionTypeName= st.nextToken();			
-			connectionType.select(connectionType.indexOf(connectionTypeName));
-			if (root != null) {
-				if (root.nodeExists(OPTSICOM)) {
-					ISecurePreferences node = root.node(OPTSICOM);
-					try {
-						txtPass.setText(node.get(configName, null));
-					} catch (StorageException e1) {
-						RESClientPlugin.log(e1);
-					}
-				} 
+			String host="", port="", connectionTypeName="", user="";
+			try{
+				host=st.nextToken();
+				port=st.nextToken();
+				connectionTypeName=st.nextToken();					
+				user =st.nextToken();
 			}
+			catch(NoSuchElementException e){
+				e.printStackTrace();
+			}
+			TableItem item = new TableItem(tableSavedConfifurations, SWT.NONE);
+			item.setText(0,serverNames[i]);
+			item.setText(1,host);
+			item.setText(2,connectionTypeName);
 		}
-		
+		bDelete.setEnabled(false);
+		bEdit.setEnabled(false);
 	}
+	
+
 	
 }
